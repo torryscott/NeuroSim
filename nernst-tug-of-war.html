@@ -275,6 +275,14 @@ footer p{margin:0 0 6px}
           </div>
           <div class="hint">smaller steps act more like a real cell, but take longer</div>
         </div>
+        <div class="group adv">
+          <div class="lab"><b>Box size</b><span>what if the cell were this small?</span></div>
+          <div class="seg" role="radiogroup" aria-label="Box size" id="tinySeg">
+            <button role="radio" aria-checked="true" data-tiny="0">Real cell</button>
+            <button role="radio" aria-checked="false" data-tiny="1">Tiny box</button>
+          </div>
+          <div class="hint" id="tinyHint">real cell: the gradient is far too big for these crossings to dent</div>
+        </div>
         <div class="group">
           <div class="btnrow">
             <button class="btn primary" id="play">Play</button>
@@ -373,7 +381,7 @@ footer p{margin:0 0 6px}
     </div>
     <div class="card tries">
       <div class="hd"><h2>Try this in class</h2></div>
-      <p class="hint" style="margin:0 0 8px">Items 7 and 8 use the extra controls behind “Show more”.</p>
+      <p class="hint" style="margin:0 0 8px">Items 7 to 9 use the extra controls behind “Show more”.</p>
       <ol>
         <li>Before pressing Play, click <b>Next ion</b> five times. Which arrow grew? Which stayed put? Why?</li>
         <li>Raise outside K⁺ from 5 to 10 mM (hyperkalemia). Predict the sign of the shift in E<sub>K</sub> before you look, then watch the membrane re-settle.</li>
@@ -383,13 +391,14 @@ footer p{margin:0 0 6px}
         <li>Set V<sub>m</sub> to −70 mV with the slider, press Hold (a typical resting potential), and compare the net push on K⁺ and on Na⁺. Which ion is farther from equilibrium at rest?</li>
         <li>Drop the temperature from 37 °C to 20 °C. The slope changes but the sign does not. Why?</li>
         <li>Choose Ca²⁺ and read the “how many ions” box. Why can a real cell never actually reach E<sub>Ca</sub>?</li>
+        <li>Switch the box size to Tiny box and press Play. Now the diffusion push shrinks as ions cross. Where do the two pushes meet, and why does a real cell not behave this way?</li>
       </ol>
     </div>
     </div>
   </section>
 
   <footer>
-    <p><b>About the model.</b> Crossing rates follow a single-barrier (Eyring) rate model, so the two directions balance exactly at the Nernst potential. V<sub>m</sub> follows the average of many random crossings, so it moves smoothly; <b>Next ion</b> shows the individual random events. The membrane capacitance is cartoon-scaled so that each ion visibly moves V<sub>m</sub>. Concentrations are typical textbook values for a mammalian neuron.</p>
+    <p><b>About the model.</b> Crossing rates follow a single-barrier (Eyring) rate model, so the two directions balance exactly at the Nernst potential. V<sub>m</sub> follows the average of many random crossings, so it moves smoothly; <b>Next ion</b> shows the individual random events. The membrane capacitance is cartoon-scaled so that each ion visibly moves V<sub>m</sub>. Concentrations are typical textbook values for a mammalian neuron. The optional tiny-box mode lets the concentrations follow the dots, one dot’s worth per crossing, to show what would happen if the cell really were as small as the picture.</p>
   </footer>
 </div>
 
@@ -411,22 +420,37 @@ const IONS = {
 };
 
 const S = {
-  ion:'K', cin:140, cout:5, tempC:37, mode:'free', clampV:-70, step:3, speed:1, gate:1,
+  ion:'K', cin:140, cout:5, tempC:37, mode:'free', clampV:-70, step:3, speed:1, gate:1, tiny:false,
   Vm:0, nOut:0, playing:false, simTime:0, countOut:0, countIn:0, rateOut:0, rateIn:0,
   trace:[], diam:20,
 };
 const ion = () => IONS[S.ion];
 const VT = () => 1000 * R * (273.15 + S.tempC) / F;               // mV
-const Eion = () => VT() / ion().z * Math.log(S.cout / S.cin);        // mV
+const dotMM = () => Math.max(S.cin, S.cout) / MAX_DOTS;              // mM represented by one dot on screen
+const netOut = () => -S.Vm / (S.step * ion().z);                      // net ions that have crossed outward, read from the charge
+const conc = () => {                                                  // the concentrations the physics uses
+  if (!S.tiny) return { cin: S.cin, cout: S.cout };                   // real cell: the gradient is far too big to dent
+  const n = netOut(), d = dotMM();                                    // tiny box: every crossing moves one dot's worth
+  return { cin: Math.max(0.001, S.cin - n * d), cout: Math.max(0.001, S.cout + n * d) };
+};
+const Eion = () => { const c = conc(); return VT() / ion().z * Math.log(c.cout / c.cin); };   // mV
+const Ebase = () => VT() / ion().z * Math.log(S.cout / S.cin);        // the real cell's E, from the slider concentrations
+function tinyEquilibrium() {                                          // where the pushes meet when the concentrations follow the dots
+  const z = ion().z, vt = VT(), d = dotMM();
+  const f = V => { const n = -V / (S.step * z); const ci = Math.max(1e-3, S.cin - n * d), co = Math.max(1e-3, S.cout + n * d); return vt * Math.log(ci / co) + z * V; };
+  let lo = -300, hi = 300; if (f(lo) * f(hi) > 0) return Eion();
+  for (let i = 0; i < 60; i++) { const mid = (lo + hi) / 2; if (f(lo) * f(mid) <= 0) hi = mid; else lo = mid; }
+  return (lo + hi) / 2;
+}
 const forces = () => {                                                // outward push on the ion, mV-equivalent
-  const chem = VT() * Math.log(S.cin / S.cout);
+  const c = conc(), chem = VT() * Math.log(c.cin / c.cout);
   const elec = ion().z * S.Vm;
   return { chem, elec, net: chem + elec };
 };
 const rates = () => {                                                 // crossings per simulated second
-  const z = ion().z, vt = VT(), cref = Math.max(S.cin, S.cout);
+  const z = ion().z, vt = VT(), cref = Math.max(S.cin, S.cout), c = conc();
   const a = clamp(z * S.Vm / (2 * vt), -14, 14);
-  return { kOut: 8 * S.gate * (S.cin / cref) * Math.exp(a), kIn: 8 * S.gate * (S.cout / cref) * Math.exp(-a) };
+  return { kOut: 8 * S.gate * (c.cin / cref) * Math.exp(a), kIn: 8 * S.gate * (c.cout / cref) * Math.exp(-a) };
 };
 
 /* ---------- formatting ---------- */
@@ -788,8 +812,10 @@ function drawStage() {
   // labels
   haloText(c, 'INSIDE · cytosol', 16, 24, `700 12px ${FONT_UI}`, T.ink2, 'left');
   haloText(c, 'OUTSIDE · extracellular', W - 16, 24, `700 12px ${FONT_UI}`, T.ink2, 'right');
-  haloText(c, `[${ion().sym}] ${fmtCshort(S.cin)} mM`, 16, 45, `600 15px ${FONT_MONO}`, T.ink, 'left');
-  haloText(c, `[${ion().sym}] ${fmtCshort(S.cout)} mM`, W - 16, 45, `600 15px ${FONT_MONO}`, T.ink, 'right');
+  const cc = conc();
+  haloText(c, `[${ion().sym}] ${fmtCshort(cc.cin)} mM`, 16, 45, `600 15px ${FONT_MONO}`, T.ink, 'left');
+  haloText(c, `[${ion().sym}] ${fmtCshort(cc.cout)} mM`, W - 16, 45, `600 15px ${FONT_MONO}`, T.ink, 'right');
+  if (S.tiny) haloText(c, 'tiny closed box · the concentrations follow the dots', mx, 54, `700 10px ${FONT_UI}`, T.muted);
   haloText(c, `${ion().sym}-selective channel${S.gate === 1 ? '' : S.gate === 0 ? ' · closed' : ' · half open'}`, mx, cy + chH + 15, `700 12px ${FONT_UI}`, T.ink2);
   haloText(c, S.mode === 'clamp' ? 'membrane voltage · held' : 'membrane voltage', mx, 20, `700 11px ${FONT_UI}`, T.ink2);
   haloText(c, `${fmtSigned(S.Vm, 1)} mV`, mx, 40, `600 16px ${FONT_MONO}`, T.ink);
@@ -871,8 +897,9 @@ let balancedLatch = false, narrKey = '', narrAt = 0, handNote = null, holdUntil 
 const approx = v => { const r = Math.round(Math.abs(v) / 5) * 5; return (r === 0 ? 'under 3' : 'about ' + r) + ' mV'; };
 function narrate(f, E) {
   const I = ion(), sym = I.sym, Es = `E<sub>${I.sub}</sub>`;
-  const hi = S.cin > S.cout ? 'inside' : 'outside';
-  const lo = Math.min(S.cin, S.cout), ratio = lo > 0 ? parseFloat((Math.max(S.cin, S.cout) / lo).toPrecision(2)) : 0;
+  const cc = conc(), hi = cc.cin > cc.cout ? 'inside' : 'outside';
+  const lo = Math.min(cc.cin, cc.cout), ratio = lo > 0 ? parseFloat((Math.max(cc.cin, cc.cout) / lo).toPrecision(2)) : 0;
+  const tinyTxt = S.tiny && (Math.abs(netOut()) >= 1) ? ` In this tiny box the concentrations follow the dots: ${sym} is now ${fmtCshort(cc.cin)} mM in and ${fmtCshort(cc.cout)} mM out, so ${Es} has slid to ${fmtSigned(E, 0)} mV and the diffusion push has shrunk to ${approx(f.chem)}. A real cell’s gradient is far too big to dent.` : '';
   const leaving = f.net > 0, moving = leaving ? 'leaving' : 'entering';
   const insideSign = ((leaving && I.z > 0) || (!leaving && I.z < 0)) ? 'negative' : 'positive';
   const chemA = approx(f.chem), elecA = approx(f.elec), netA = approx(f.net);
@@ -885,9 +912,11 @@ function narrate(f, E) {
     return `You are holding V<sub>m</sub> at ${fmtSigned(S.Vm, 0)} mV, ${Math.abs(gap).toFixed(0)} mV ${gap > 0 ? 'above' : 'below'} ${Es} (${fmtSigned(E, 0)} mV). The pushes do not cancel, so ${sym} keeps ${moving} the cell with a net push of ${netA}. The hold absorbs that charge, so V<sub>m</sub> cannot drift.`;
   }
   if (S.countOut + S.countIn === 0 && Math.abs(S.Vm) < 0.05) return `Starting point. V<sub>m</sub> is 0 mV, so there is no electrical push yet. Diffusion pushes ${sym} ${leaving ? 'out' : 'in'} because there is ${ratio}× more of it ${hi}; a few still hop the other way, just ${ratio}× less often. Press <b>Next ion</b>, drag an ion through the channel, or press <b>Play</b>.`;
-  if (balancedLatch) return `Balanced. The electrical pull now matches the diffusion push, so ${sym} crosses equally in both directions and the net push is zero. V<sub>m</sub> sits at ${Es}, the equilibrium potential. The concentrations have not evened out; the pushes have.`;
-  if (Math.abs(f.elec) < Math.abs(f.chem)) return `${sym} is ${moving} the cell because the diffusion push (${chemA}) is stronger than the electrical push (${elecA}). Traffic runs both ways: right now about ${(() => { const rr = rates(); const q = leaving ? rr.kOut / Math.max(rr.kIn, 1e-9) : rr.kIn / Math.max(rr.kOut, 1e-9); return q >= 10 ? Math.round(q) : q.toFixed(1); })()} ${leaving ? 'leave' : 'enter'} for every one that hops the other way, and that ratio shrinks as the electrical push grows. Each net crossing leaves one more unpaired charge on each face (the − and + marks), making the inside more ${insideSign} and the electrical push stronger, until the two match.${half}`;
-  return `${sym} is ${moving} the cell because the electrical push (${elecA}) is now stronger than the diffusion push (${chemA}). Each crossing weakens the electrical push until the two match again.${half}`;
+  if (balancedLatch) return S.tiny
+    ? `Balanced at ${fmtSigned(S.Vm, 0)} mV, well short of the ${fmtSigned(Ebase(), 0)} mV a real cell reaches. Every crossing changed the concentrations (${sym} is now ${fmtCshort(cc.cin)} mM in, ${fmtCshort(cc.cout)} mM out), so the diffusion push shrank as the electrical push grew and ${Es} slid to meet V<sub>m</sub>. A real cell never does this: it holds about 50,000 times more ${sym} than it takes to charge the membrane.`
+    : `Balanced. The electrical pull now matches the diffusion push, so ${sym} crosses equally in both directions and the net push is zero. V<sub>m</sub> sits at ${Es}, the equilibrium potential. The concentrations have not evened out; the pushes have.`;
+  if (Math.abs(f.elec) < Math.abs(f.chem)) return `${sym} is ${moving} the cell because the diffusion push (${chemA}) is stronger than the electrical push (${elecA}). Traffic runs both ways: right now about ${(() => { const rr = rates(); const q = leaving ? rr.kOut / Math.max(rr.kIn, 1e-9) : rr.kIn / Math.max(rr.kOut, 1e-9); return q >= 10 ? Math.round(q) : q.toFixed(1); })()} ${leaving ? 'leave' : 'enter'} for every one that hops the other way, and that ratio shrinks as the electrical push grows. Each net crossing leaves one more unpaired charge on each face (the − and + marks), making the inside more ${insideSign} and the electrical push stronger, until the two match.${half}${tinyTxt}`;
+  return `${sym} is ${moving} the cell because the electrical push (${elecA}) is now stronger than the diffusion push (${chemA}). Each crossing weakens the electrical push until the two match again.${half}${tinyTxt}`;
 }
 
 /* ---------- UI updates ---------- */
@@ -899,6 +928,7 @@ function setBar(el, value, scale) {
 const dirWord = v => v > 0 ? 'outward' : v < 0 ? 'inward' : 'balanced';
 function updateUI() {
   const f = forces(), E = Eion(), I = ion();
+  if (S.tiny) { renderEquation(); updateMfoot(); }
   const scale = Math.max(Math.abs(f.chem), Math.abs(f.elec), Math.abs(f.net)) > 150 ? 300 : 150;
   setBar($('#bChem'), f.chem, scale); setBar($('#bElec'), f.elec, scale); setBar($('#bNet'), f.net, scale);
   $('#vChem').textContent = `${Math.abs(f.chem).toFixed(1)} mV ${dirWord(f.chem)}`;
@@ -928,6 +958,18 @@ function updateUI() {
   const tn = S.countOut - S.countIn;
   $('#totNet').textContent = tn === 0 ? '0' : `${withCommas(Math.abs(tn))} ${tn > 0 ? 'outward' : 'inward'}`;
 }
+function updateMfoot() {
+  const chemNow = Math.abs(forces().chem).toFixed(0);
+  $('#mfoot').textContent = `Both pushes are measured in millivolts so they can be compared directly: a diffusion push of ${chemNow} mV means it would take ${chemNow} mV of membrane voltage to cancel it.`;
+}
+function renderEquation() {
+  const I = ion(), E = Eion(), slope = VT() * Math.LN10, z = I.z, c = conc();
+  const zs = (z > 0 ? '+' : MINUS) + Math.abs(z);
+  $('#eq').innerHTML =
+    `E<sub>${I.sub}</sub> = <span class="frac"><span>RT</span><span>zF</span></span> ln <span class="frac"><span>[${I.sym}]<sub>out</sub></span><span>[${I.sym}]<sub>in</sub></span></span>` +
+    ` = <span class="frac"><span>${slope.toFixed(1)} mV</span><span>${zs}</span></span> × log<sub>10</sub><span class="frac"><span>${fmtCshort(c.cout)}</span><span>${fmtCshort(c.cin)}</span></span>` +
+    ` = <span class="res">${fmtSigned(E, 1)} mV</span>` + (S.tiny ? ' <span class="hint">(with the box’s current concentrations)</span>' : '');
+}
 function updateStatic() {
   const I = ion(), E = Eion(), vt = VT(), slope = vt * Math.LN10, z = I.z;
   document.body.classList.remove('ion-K', 'ion-Na', 'ion-Cl', 'ion-Ca'); document.body.classList.add('ion-' + I.key); readTokens();
@@ -935,8 +977,7 @@ function updateStatic() {
   $('#meterTitle').textContent = `push on ${I.sym}, in mV`;
   $('#holdBtn').setAttribute('aria-pressed', S.mode === 'clamp' ? 'true' : 'false'); $('#holdBtn').textContent = S.mode === 'clamp' ? 'Holding' : 'Hold';
   $('#legendIon').textContent = `${I.sym} ions`;
-  const chemNow = Math.abs(forces().chem).toFixed(0);
-  $('#mfoot').textContent = `Both pushes are measured in millivolts so they can be compared directly: a diffusion push of ${chemNow} mV means it would take ${chemNow} mV of membrane voltage to cancel it.`;
+  updateMfoot();
   $('#roEsym').innerHTML = `E<sub>${I.sub}</sub>`; $('#roDfSym').innerHTML = `V<sub>m</sub> − E<sub>${I.sub}</sub>`;
   const hi = Math.max(S.cin, S.cout), lo = Math.min(S.cin, S.cout);
   $('#ratio').textContent = lo > 0 ? `ratio ${parseFloat((hi / lo).toPrecision(3))} : 1` : '';
@@ -944,11 +985,7 @@ function updateStatic() {
   $('#vtLbl').textContent = vt.toFixed(1) + ' mV';
   $('#nIn').value = fmtCshort(S.cin); $('#nOut').value = fmtCshort(S.cout);
   $('#rIn').value = Math.round((Math.log10(S.cin) + 4) * 100); $('#rOut').value = Math.round((Math.log10(S.cout) + 4) * 100);
-  const zs = (z > 0 ? '+' : MINUS) + Math.abs(z);
-  $('#eq').innerHTML =
-    `E<sub>${I.sub}</sub> = <span class="frac"><span>RT</span><span>zF</span></span> ln <span class="frac"><span>[${I.sym}]<sub>out</sub></span><span>[${I.sym}]<sub>in</sub></span></span>` +
-    ` = <span class="frac"><span>${slope.toFixed(1)} mV</span><span>${zs}</span></span> × log<sub>10</sub><span class="frac"><span>${fmtCshort(S.cout)}</span><span>${fmtCshort(S.cin)}</span></span>` +
-    ` = <span class="res">${fmtSigned(E, 1)} mV</span>`;
+  renderEquation();
   // real-cell numbers
   const d = S.diam, A = Math.PI * d * d * 1e-8, C = 1e-6 * A, V = Math.PI * d * d * d / 6 * 1e-15;
   const nIons = C * Math.abs(E) / 1000 / QE / Math.abs(z), nInside = S.cin * 1e-3 * V * NA;
@@ -990,6 +1027,16 @@ $('#holdBtn').addEventListener('click', () => {
   S.nOut = -S.Vm / S.step; rebuildChargeStatic(); pushTrace(); updateStatic();
 });
 seg('#stepSeg', 'step', v => { S.step = parseFloat(v); S.nOut = -S.Vm / S.step; rebuildChargeStatic(); updateUI(); });
+function setTiny(on) {
+  S.tiny = on; balancedLatch = false;
+  const I = ion(), E0 = Ebase();
+  $('#tinyHint').textContent = on ? `tiny box: each crossing moves one dot’s worth (${fmtCshort(dotMM())} mM), so the gradient is used up as it charges the membrane` : 'real cell: the gradient is far too big for these crossings to dent';
+  handNote = { until: performance.now() + 9000, html: on
+    ? `Tiny box: from now on every crossing changes the concentrations by one dot’s worth (${fmtCshort(dotMM())} mM). Watch the diffusion push shrink as ions cross while the electrical push grows; they will meet near ${fmtSigned(tinyEquilibrium(), 0)} mV instead of at E<sub>${I.sub}</sub> = ${fmtSigned(E0, 0)} mV.`
+    : `Real cell again: the gradient is treated as fixed, because a real cell holds about 50,000 times more ${I.sym} than it takes to charge the membrane, so E<sub>${I.sub}</sub> stays at ${fmtSigned(E0, 0)} mV.` };
+  updateStatic();
+}
+seg('#tinySeg', 'tiny', v => setTiny(v === '1'));
 seg('#speedSeg', 'speed', v => { S.speed = parseFloat(v); });
 const sliderToC = v => parseFloat(Math.pow(10, v / 100 - 4).toPrecision(3));
 $('#rIn').addEventListener('input', e => { S.cin = sliderToC(+e.target.value); updateStatic(); });

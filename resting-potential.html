@@ -1,0 +1,1230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resting Potential Tug-of-War</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+
+:root{
+  color-scheme: light;
+  --page:#eef1f5; --panel:#ffffff; --stage:#f7f9fc; --stage-in:#f1f4f9; --stage-out:#fbfcfe;
+  --ink:#14181d; --ink-2:#4b5563; --muted:#8a919c; --line:#d9dee6; --line-2:#e9edf2;
+  --membrane:#aeb7c5; --membrane-core:#e2e7ee; --pore:#ffffff; --glyph:#ffffff; --ring:rgba(20,24,29,.28);
+  --ion-K:#4a3aa7; --ion-Na:#eb6834; --ion-Cl:#1baf7a; --ion-Ca:#e34948;
+  --ctrl:#f1f3f7; --ctrl-hover:#e5e9ef; --on:#14181d; --on-text:#ffffff;
+  --focus:#2a78d6; --tip:#14181d; --tip-text:#ffffff;
+  --ion: var(--ion-K);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --page:#0f1216; --panel:#171b21; --stage:#1c2129; --stage-in:#192028; --stage-out:#1f252e;
+    --ink:#eceff3; --ink-2:#b7bec8; --muted:#7f8792; --line:#2c333d; --line-2:#242a33;
+    --membrane:#5a6578; --membrane-core:#262d37; --pore:#0f1216; --glyph:#0f1216; --ring:rgba(255,255,255,.28);
+    --ion-K:#9085e9; --ion-Na:#d95926; --ion-Cl:#199e70; --ion-Ca:#e66767;
+    --ctrl:#1f252e; --ctrl-hover:#262d37; --on:#eceff3; --on-text:#0f1216;
+    --focus:#3987e5; --tip:#eceff3; --tip-text:#0f1216;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --page:#0f1216; --panel:#171b21; --stage:#1c2129; --stage-in:#192028; --stage-out:#1f252e;
+  --ink:#eceff3; --ink-2:#b7bec8; --muted:#7f8792; --line:#2c333d; --line-2:#242a33;
+  --membrane:#5a6578; --membrane-core:#262d37; --pore:#0f1216; --glyph:#0f1216; --ring:rgba(255,255,255,.28);
+  --ion-K:#9085e9; --ion-Na:#d95926; --ion-Cl:#199e70; --ion-Ca:#e66767;
+  --ctrl:#1f252e; --ctrl-hover:#262d37; --on:#eceff3; --on-text:#0f1216;
+  --focus:#3987e5; --tip:#eceff3; --tip-text:#0f1216;
+}
+body.ion-K{--ion:var(--ion-K)} body.ion-Na{--ion:var(--ion-Na)} body.ion-Cl{--ion:var(--ion-Cl)} body.ion-Ca{--ion:var(--ion-Ca)}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--page); color:var(--ink);
+  font-family:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric:tabular-nums}
+.wrap{max-width:1280px; margin:0 auto; padding:22px 20px 56px; display:grid; gap:18px}
+header.top{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap}
+h1{font-size:28px; line-height:1.15; margin:0; letter-spacing:-.01em; text-wrap:balance}
+.sub{color:var(--ink-2); max-width:64ch; margin:6px 0 0}
+.legend{display:flex; gap:14px; flex-wrap:wrap; color:var(--ink-2); font-size:13px}
+.legend span{display:inline-flex; align-items:center; gap:7px}
+.legend i{display:inline-block; width:26px; height:0; border-top:3px solid var(--ink)}
+.legend i.dash{border-top-style:dashed}
+.legend i.net{border-top-color:var(--ion); border-top-width:4px}
+
+.card{background:var(--panel); border:1px solid var(--line); border-radius:10px}
+.card > .hd{display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:12px 16px 0; flex-wrap:wrap}
+h2{font-size:12px; text-transform:uppercase; letter-spacing:.09em; color:var(--ink-2); margin:0; font-weight:700}
+.hint{font-size:13px; color:var(--muted)}
+
+.dash{display:grid; grid-template-columns:minmax(0,1fr) 296px 296px; gap:16px; align-items:start}
+.col{display:grid; gap:16px; min-width:0}
+@media (max-width:1180px){
+  .dash{grid-template-columns:minmax(0,1fr) 340px}
+  .col.left{grid-column:1; grid-row:1 / 3}
+  .col.mid{grid-column:2; grid-row:1}
+  .col.right{grid-column:2; grid-row:2}
+}
+@media (max-width:900px){
+  .dash{grid-template-columns:1fr}
+  .col.left,.col.mid,.col.right{grid-column:auto; grid-row:auto}
+}
+
+/* stage */
+.stage{padding:12px 16px 14px; display:grid; gap:10px}
+canvas#stage{width:100%; aspect-ratio:640/440; display:block; border-radius:8px; background:var(--stage); touch-action:none}
+body.simple .adv{display:none}
+.viewrow{display:flex; justify-content:space-between; align-items:center; padding:10px 16px}
+.meter{display:grid; gap:6px; padding-top:4px}
+.meter .mhd{display:flex; justify-content:space-between; font-size:12px; color:var(--muted)}
+.mrow{display:grid; gap:3px}
+.mrow .rowhd{display:flex; justify-content:space-between; align-items:baseline; font-size:13px}
+.mrow .rowhd b{font-weight:700}
+.mrow .rowhd .v{color:var(--ink-2)}
+.track{position:relative; height:12px; background:var(--line-2); border-radius:3px; overflow:hidden}
+.track .ctr{position:absolute; left:50%; top:0; bottom:0; width:2px; margin-left:-1px; background:var(--ink-2); opacity:.7}
+.bar{position:absolute; top:1px; bottom:1px; width:0; transition:width .12s linear}
+.bar.out{left:50%; border-radius:0 5px 5px 0}
+.bar.in{right:50%; border-radius:5px 0 0 5px}
+.bar.diff{background:repeating-linear-gradient(45deg, var(--ink) 0 3px, transparent 3px 7px); border:1px solid var(--ink); border-left-width:0}
+.bar.in.diff{border-left-width:1px; border-right-width:0}
+.bar.elec{background:var(--ink)}
+.bar.net{background:var(--ion)}
+.ticks{position:relative; height:16px; font-size:11px; color:var(--muted)}
+.ticks span{position:absolute; top:0; transform:translateX(-50%)}
+.ticks span.l{transform:none; left:0} .ticks span.r{transform:none; right:0}
+
+/* controls */
+.controls{display:grid}
+.group{display:grid; gap:8px; padding:12px 16px; border-top:1px solid var(--line-2)}
+.group:first-child{border-top:0}
+.group .lab{display:flex; justify-content:space-between; align-items:baseline; font-size:13px; color:var(--ink-2)}
+.group .lab b{color:var(--ink); font-weight:700}
+.seg{display:flex; background:var(--ctrl); border-radius:8px; padding:3px; gap:3px}
+.seg button{flex:1; border:0; background:transparent; color:var(--ink); padding:7px 6px; border-radius:6px; font:inherit; font-size:14px; font-weight:700; cursor:pointer; white-space:nowrap}
+.seg button:hover{background:var(--ctrl-hover)}
+.seg button[aria-checked="true"]{background:var(--on); color:var(--on-text)}
+.seg button .d{display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--c); margin-right:6px; vertical-align:-1px; box-shadow:0 0 0 1.5px var(--panel)}
+.sl{display:grid; grid-template-columns:1fr 92px; gap:10px; align-items:center}
+input[type=range]{width:100%; accent-color:var(--ink); margin:0}
+input[type=number]{font:inherit; font-size:13px; padding:5px 7px; border:1px solid var(--line); border-radius:6px; background:var(--panel); color:var(--ink); width:100%}
+.btnrow{display:flex; gap:8px; flex-wrap:wrap}
+.btn{font:inherit; font-size:14px; font-weight:700; border:1px solid var(--line); background:var(--panel); color:var(--ink); padding:8px 12px; border-radius:8px; cursor:pointer}
+.btn:hover{background:var(--ctrl)}
+.btn.primary{background:var(--on); color:var(--on-text); border-color:var(--on); min-width:88px}
+.btn.primary:hover{opacity:.9}
+.btn.link{border:0; padding:0; background:none; color:var(--ink-2); font-weight:400; font-size:13px; text-decoration:underline; text-underline-offset:3px}
+button:focus-visible, input:focus-visible, [tabindex]:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
+.keys{font-size:12px; color:var(--muted)}
+.keys kbd{font-family:inherit; border:1px solid var(--line); border-bottom-width:2px; border-radius:4px; padding:0 5px; font-size:11px}
+
+/* readouts */
+.readouts{display:grid; grid-template-columns:1fr}
+.ro{padding:12px 16px; border-top:1px solid var(--line-2)}
+.ro .k{font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-2); font-weight:700}
+.ro .big{font-size:28px; font-weight:600; line-height:1.15; margin-top:2px; white-space:nowrap}
+.ro .big small{font-size:14px; font-weight:500; margin-left:5px; color:var(--ink-2)}
+.ro .note{font-size:13px; color:var(--ink-2); margin-top:2px; min-height:1.4em}
+.ro.wide{grid-column:1 / -1; border-right:0}
+.swatch{display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--ion); vertical-align:-1px; margin-left:6px}
+
+/* row 2 */
+.tracecard{padding:12px 16px 14px; display:grid; gap:8px}
+.tracecard .hd{padding:0}
+canvas#trace{width:100%; height:170px; display:block; border-radius:6px; cursor:crosshair}
+.frow{display:grid; grid-template-columns:78px 1fr 84px; gap:10px; align-items:center; font-size:14px}
+.frow .fb{height:10px; background:var(--line-2); border-radius:3px; overflow:hidden}
+.frow .fb i{display:block; height:100%; width:0; background:var(--ion); border-radius:0 5px 5px 0; transition:width .15s linear}
+.frow .fv{text-align:right; color:var(--ink-2)}
+.flux .tot{font-size:13px; color:var(--ink-2); border-top:1px solid var(--line-2); padding-top:10px; display:grid; gap:2px}
+.flux .tot b{color:var(--ink)}
+
+/* row 3 */
+.row3{display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:stretch}
+@media (max-width:860px){.row3{grid-template-columns:1fr}}
+.eqcard, .cellcard{padding:12px 16px 16px; display:grid; gap:10px; align-content:start}
+.eqcard .hd, .cellcard .hd{padding:0}
+.eq{font-size:18px; line-height:1.6; overflow-x:auto}
+.eq .frac{display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; margin:0 4px; line-height:1.25}
+.eq .frac > span:first-child{border-bottom:1.5px solid currentColor; padding:0 5px}
+.eq .frac > span:last-child{padding:0 5px}
+.eq sub{font-size:.7em}
+.eq .res{font-weight:600}
+.cellcard p{margin:0}
+.cellcard .diam{display:flex; gap:10px; align-items:center; font-size:13px; color:var(--ink-2)}
+.cellcard .diam input{width:74px}
+.cellcard .num b{font-weight:600}
+
+/* row 4 */
+.row4{display:grid; grid-template-columns:minmax(0,1fr) 380px; gap:18px; align-items:start}
+@media (max-width:960px){.row4{grid-template-columns:1fr}}
+.prose{padding:16px 20px 20px; max-width:none}
+.prose .hd{padding:0 0 6px}
+.prose p{margin:0 0 12px; max-width:66ch}
+.prose h3{font-size:15px; margin:14px 0 4px; font-weight:700}
+.prose h3:first-of-type{margin-top:8px}
+.tries{padding:16px 20px 18px}
+.tries .hd{padding:0 0 6px}
+.tries ol{margin:0; padding-left:22px; display:grid; gap:9px; font-size:14px}
+.tries li::marker{color:var(--ink-2); font-weight:700}
+footer{font-size:13px; color:var(--muted); max-width:90ch}
+footer p{margin:0 0 6px}
+.tip{position:absolute; pointer-events:none; background:var(--tip); color:var(--tip-text); font-size:12px; padding:4px 7px; border-radius:5px; white-space:nowrap; transform:translate(-50%,-130%); display:none}
+.tracewrap{position:relative}
+.narr{margin:0; padding:9px 12px; border-left:3px solid var(--ion); background:var(--ctrl); border-radius:0 6px 6px 0; font-size:14px; line-height:1.45; min-height:4.9em}
+.narr .nk{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-2); font-weight:700; margin-right:6px}
+.mfoot{font-size:12px; color:var(--muted); margin:0}
+.crow{display:grid; grid-template-columns:auto 1fr 60px; gap:8px; align-items:center; font-size:13px}
+.crow b{font-weight:700; white-space:nowrap}
+.crow input[type=number]{font-size:12px; padding:4px 6px}
+.crow2{display:grid; grid-template-columns:auto 1fr; gap:10px; align-items:center; font-size:13px}
+.crow2 b{font-weight:700}
+.viewrow h2{font-size:12px}
+.vmset{display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; margin-top:8px}
+.btn.small{padding:5px 10px; font-size:13px}
+.btn.small[aria-pressed="true"]{background:var(--on); color:var(--on-text); border-color:var(--on)}
+.metercard{padding:0 16px 12px}
+.metercard > .hd{padding:12px 0 6px}
+.flux{display:grid; gap:10px; padding:0 16px 14px}
+.flux > .hd{padding:12px 0 0}
+.ro:first-child{border-top:0}
+.legend i.ionsw{width:12px; height:12px; border-radius:50%; background:var(--ion); border:0}
+.callout{border-left:3px solid var(--ink); background:var(--ctrl); padding:10px 12px; border-radius:0 6px 6px 0; margin:0 0 12px; max-width:66ch}
+.callout p{margin:0; max-width:none}
+.rightcol{display:grid; gap:18px}
+.gloss{padding:16px 20px 18px}
+.gloss .hd{padding:0 0 8px}
+.gloss dl{margin:0; display:grid; gap:9px; font-size:14px}
+.gloss dt{font-weight:700}
+.gloss dd{margin:0; color:var(--ink-2)}
+@media (prefers-reduced-motion:reduce){.bar, .frow .fb i{transition:none}}
+.legend i.ionsw{background:var(--c, var(--ion))}
+.legend i.pumpsw{width:16px; height:8px; border:0; border-radius:2px; background:var(--ink)}
+.narr{border-left-color:var(--ink)}
+canvas#stage{aspect-ratio:640/480}
+.tray{display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:13px}
+.tray .hint{font-size:12px}
+.chip{display:inline-flex; align-items:center; gap:6px; font:inherit; font-size:13px; font-weight:700; border:1px solid var(--line); background:var(--panel); color:var(--ink); padding:5px 10px; border-radius:999px; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none}
+.chip:hover{background:var(--ctrl)}
+.chip i{display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--c)}
+.chip i.pumpi{width:14px; height:8px; border-radius:2px; background:var(--ink)}
+.ghost{position:fixed; left:0; top:0; pointer-events:none; z-index:50; display:none; padding:5px 10px; border-radius:999px; background:var(--on); color:var(--on-text); font-size:13px; font-weight:700; transform:translate(-50%,-50%); white-space:nowrap}
+.step{display:grid; grid-template-columns:12px 44px 30px 34px 30px; gap:6px; align-items:center; font-size:14px}
+.step i{display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--c)}
+.step b{text-align:center; font-size:15px}
+.sb{width:30px; height:28px; border:1px solid var(--line); background:var(--panel); color:var(--ink); border-radius:7px; font:inherit; font-size:16px; font-weight:700; cursor:pointer; line-height:1; padding:0}
+.sb:hover{background:var(--ctrl)}
+.cgrid{display:grid; grid-template-columns:auto 1fr 1fr; gap:6px 8px; align-items:center; font-size:13px}
+.cgrid span i{display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--c); margin-right:5px}
+.cgrid input{font-size:12px; padding:4px 6px}
+.cgrid .h{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em}
+.elist{display:grid; grid-template-columns:auto 1fr; gap:3px 10px; align-items:baseline; margin-top:4px; font-size:14px}
+.elist i{display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--c); margin-right:6px; vertical-align:-1px}
+.elist b{font-weight:600; font-size:16px; text-align:right; white-space:nowrap}
+.mrow .sw{display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--c); margin-right:5px; vertical-align:-1px}
+.mrow .rowhd .hint{font-weight:400; margin-left:4px}
+.bar.K{background:var(--ion-K)} .bar.Na{background:var(--ion-Na)} .bar.Cl{background:var(--ion-Cl)} .bar.pump{background:var(--ink)}
+.eqcard{padding:12px 16px 14px; display:grid; gap:8px}
+.eqcard .hd{padding:0}
+.eq{font-size:15px; line-height:1.6}
+.link{color:var(--ink-2)}
+.series{display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 16px; font-size:13px}
+.series .brand{font-size:11px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--muted)}
+.series a{color:var(--ink-2); text-decoration:none; border-bottom:2px solid transparent; padding-bottom:1px}
+.series a:hover{border-bottom-color:var(--line)}
+.series a[aria-current="page"]{color:var(--ink); font-weight:700; border-bottom-color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="series" aria-label="NeuroSim demos"><span class="brand">NeuroSim</span><a href="https://torryscott.github.io/NeuroSim/nernst-tug-of-war.html">1 · Nernst</a><a href="https://torryscott.github.io/NeuroSim/resting-potential.html" aria-current="page">2 · Resting potential</a><a href="https://torryscott.github.io/NeuroSim/action-potential.html">3 · Action potential</a></nav>
+  <header class="top">
+    <div>
+      <h1>Resting Potential Tug-of-War</h1>
+      <p class="sub">Several ions, each with its own channels and its own equilibrium potential. The membrane settles where their pulls balance, and a pump pays to keep it there.</p>
+    </div>
+    <div class="legend" aria-label="Legend">
+      <span><i class="ionsw" style="--c:var(--ion-K)"></i> K⁺</span>
+      <span><i class="ionsw" style="--c:var(--ion-Na)"></i> Na⁺</span>
+      <span><i class="ionsw" style="--c:var(--ion-Cl)"></i> Cl⁻</span>
+      <span><i class="pumpsw"></i> Na⁺/K⁺ pump</span>
+    </div>
+  </header>
+
+  <section class="dash">
+    <div class="col left">
+      <div class="card stage">
+        <canvas id="stage" role="img" aria-label="A patch of membrane with potassium, sodium and chloride channels and a sodium–potassium pump. Ions of all three kinds jiggle on both sides and cross through their own channels. Above the box, a voltage axis shows each ion's equilibrium potential and the pull it exerts on the membrane voltage."></canvas>
+        <div class="tray" id="tray">
+          <span class="hint">Drag into the membrane, or click:</span>
+          <button class="chip" data-add="K"><i style="--c:var(--ion-K)"></i>K⁺ channel</button>
+          <button class="chip" data-add="Na"><i style="--c:var(--ion-Na)"></i>Na⁺ channel</button>
+          <button class="chip" data-add="Cl"><i style="--c:var(--ion-Cl)"></i>Cl⁻ channel</button>
+          <button class="chip" data-add="pump"><i class="pumpi"></i>Na⁺/K⁺ pump</button>
+          <span class="hint">· click a channel to close it · drag it out to remove it</span>
+        </div>
+        <p class="narr" id="narr" aria-live="off"><span class="nk">What is happening</span><span id="narrText"></span></p>
+      </div>
+      <div class="card tracecard">
+        <div class="hd"><h2>Membrane voltage over time</h2><span class="hint">solid line V<sub>m</sub> · dashed lines E<sub>K</sub>, E<sub>Na</sub>, E<sub>Cl</sub> · last 60 s</span></div>
+        <div class="tracewrap"><canvas id="trace" role="img" aria-label="Membrane voltage against simulated time, with the three equilibrium potentials as dashed reference lines."></canvas><div class="tip mono" id="tip"></div></div>
+      </div>
+    </div>
+
+    <div class="col mid">
+      <div class="card controls">
+        <div class="viewrow"><h2>Controls</h2><button class="btn link" id="viewToggle">Show more</button></div>
+        <div class="group">
+          <div class="lab"><b>Open channels</b><span>each one is a vote</span></div>
+          <div class="step" data-type="K"><i style="--c:var(--ion-K)"></i><span>K⁺</span><button class="sb" data-d="-1" aria-label="Remove a K⁺ channel">−</button><b class="mono" id="cntK">8</b><button class="sb" data-d="1" aria-label="Add a K⁺ channel">+</button></div>
+          <div class="step" data-type="Na"><i style="--c:var(--ion-Na)"></i><span>Na⁺</span><button class="sb" data-d="-1" aria-label="Remove a Na⁺ channel">−</button><b class="mono" id="cntNa">1</b><button class="sb" data-d="1" aria-label="Add a Na⁺ channel">+</button></div>
+          <div class="step" data-type="Cl"><i style="--c:var(--ion-Cl)"></i><span>Cl⁻</span><button class="sb" data-d="-1" aria-label="Remove a Cl⁻ channel">−</button><b class="mono" id="cntCl">1</b><button class="sb" data-d="1" aria-label="Add a Cl⁻ channel">+</button></div>
+        </div>
+        <div class="group">
+          <div class="lab"><b>Na⁺/K⁺ pump</b><span>3 Na⁺ out, 2 K⁺ in, per ATP</span></div>
+          <div class="seg" role="radiogroup" aria-label="Pump" id="pumpSeg">
+            <button role="radio" aria-checked="true" data-pump="1">On</button>
+            <button role="radio" aria-checked="false" data-pump="0">Off</button>
+          </div>
+        </div>
+        <div class="group">
+          <div class="lab"><b>Outside K⁺</b><span>mM</span></div>
+          <div class="crow"><b>[K⁺]<sub>out</sub></b><input type="range" id="rKout" min="1" max="30" step="0.5" value="5" aria-label="Outside potassium concentration"><input type="number" class="mono" id="nKout" step="0.5" min="0.5" max="200" value="5" aria-label="Outside potassium concentration in millimolar"></div>
+        </div>
+        <div class="group adv">
+          <div class="lab"><b>All concentrations</b><span>mM</span></div>
+          <div class="cgrid">
+            <span></span><span class="h">inside</span><span class="h">outside</span>
+            <span><i style="--c:var(--ion-K)"></i>K⁺</span><input type="number" class="mono" id="cKin" step="any" min="0.5" max="500" aria-label="Inside potassium"><input type="number" class="mono" id="cKout" step="any" min="0.5" max="500" aria-label="Outside potassium">
+            <span><i style="--c:var(--ion-Na)"></i>Na⁺</span><input type="number" class="mono" id="cNain" step="any" min="0.5" max="500" aria-label="Inside sodium"><input type="number" class="mono" id="cNaout" step="any" min="0.5" max="500" aria-label="Outside sodium">
+            <span><i style="--c:var(--ion-Cl)"></i>Cl⁻</span><input type="number" class="mono" id="cClin" step="any" min="0.5" max="500" aria-label="Inside chloride"><input type="number" class="mono" id="cClout" step="any" min="0.5" max="500" aria-label="Outside chloride">
+          </div>
+          <div class="lab"><button class="btn link" id="typical">Typical values</button><span class="hint">typical mammalian neuron</span></div>
+        </div>
+        <div class="group adv">
+          <div class="lab"><b>Temperature</b><span class="mono" id="tempLbl">37 °C · 61.5 mV per decade</span></div>
+          <input type="range" id="rTemp" min="0" max="45" step="1" value="37" aria-label="Temperature in degrees Celsius">
+        </div>
+        <div class="group">
+          <div class="btnrow">
+            <button class="btn primary" id="play">Pause</button>
+            <button class="btn" id="next">Let one cross</button>
+            <button class="btn" id="reset">Reset</button>
+          </div>
+          <div class="crow2 adv"><b>Speed</b>
+            <div class="seg" role="radiogroup" aria-label="Simulation speed" id="speedSeg">
+              <button role="radio" aria-checked="false" data-speed="0.5">½×</button>
+              <button role="radio" aria-checked="true" data-speed="1">1×</button>
+              <button role="radio" aria-checked="false" data-speed="2">2×</button>
+              <button role="radio" aria-checked="false" data-speed="4">4×</button>
+            </div>
+          </div>
+          <div class="keys"><kbd>space</kbd> play / pause &nbsp; <kbd>C</kbd> let one cross &nbsp; <kbd>R</kbd> reset</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col right">
+      <div class="card readouts">
+        <div class="ro">
+          <div class="k">Membrane voltage V<sub>m</sub></div>
+          <div class="big mono" id="roVm">−76.3 mV</div>
+          <div class="note" id="roVmNote">inside relative to outside</div>
+          <div class="vmset"><input type="range" id="rVm" min="-150" max="150" step="1" value="-76" aria-label="Set the membrane voltage in millivolts"><button class="btn small" id="holdBtn" aria-pressed="false">Hold</button></div>
+          <div class="hint">drag to set V<sub>m</sub> yourself · Hold keeps it there, like a voltage clamp</div>
+        </div>
+        <div class="ro">
+          <div class="k">Equilibrium potentials</div>
+          <div class="elist">
+            <span><i style="--c:var(--ion-K)"></i>E<sub>K</sub></span><b class="mono" id="eK">−89.5 mV</b>
+            <span><i style="--c:var(--ion-Na)"></i>E<sub>Na</sub></span><b class="mono" id="eNa">+60.6 mV</b>
+            <span><i style="--c:var(--ion-Cl)"></i>E<sub>Cl</sub></span><b class="mono" id="eCl">−64.0 mV</b>
+          </div>
+          <div class="note">where each ion, alone, would put V<sub>m</sub></div>
+        </div>
+      </div>
+      <div class="card metercard">
+        <div class="hd"><h2>Tug of war on V<sub>m</sub></h2><span class="hint">pull = ions crossing per second</span></div>
+        <div class="meter" aria-label="Pulls on the membrane voltage">
+          <div class="mhd"><span>◀ pulls down</span><span></span><span>pulls up ▶</span></div>
+          <div class="mrow"><div class="rowhd"><b><i class="sw" style="--c:var(--ion-K)"></i>K⁺<span class="hint" id="rK"></span></b><span class="v mono" id="vK">—</span></div><div class="track"><div class="ctr"></div><div class="bar K" id="bK"></div></div></div>
+          <div class="mrow"><div class="rowhd"><b><i class="sw" style="--c:var(--ion-Na)"></i>Na⁺<span class="hint" id="rNa"></span></b><span class="v mono" id="vNa">—</span></div><div class="track"><div class="ctr"></div><div class="bar Na" id="bNa"></div></div></div>
+          <div class="mrow"><div class="rowhd"><b><i class="sw" style="--c:var(--ion-Cl)"></i>Cl⁻<span class="hint" id="rCl"></span></b><span class="v mono" id="vCl">—</span></div><div class="track"><div class="ctr"></div><div class="bar Cl" id="bCl"></div></div></div>
+          <div class="mrow"><div class="rowhd"><b><i class="sw" style="--c:var(--ink)"></i>Pump<span class="hint" id="rPump"></span></b><span class="v mono" id="vPump">—</span></div><div class="track"><div class="ctr"></div><div class="bar pump" id="bPump"></div></div></div>
+          <p class="mfoot">V<sub>m</sub> holds still when the down-pulls and the up-pulls match. An ion’s pull grows with its number of open channels and with its distance from its own E.</p>
+        </div>
+      </div>
+      <div class="card eqcard adv">
+        <div class="hd"><h2>The vote, as an equation</h2></div>
+        <div class="eq mono" id="eq"></div>
+        <p class="hint" style="margin:0">Each ion’s equilibrium potential is weighted by its conductance g, here the number of open channels. Textbooks also write this with permeabilities, the Goldman–Hodgkin–Katz equation. Same idea: each ion’s vote counts in proportion to how easily it crosses.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="row4">
+    <div class="card prose">
+      <div class="hd"><h2>What sets the resting potential?</h2></div>
+      <p><b>The one-sentence version.</b> The resting potential is the compromise voltage at which the pulls of all the ions that can cross the membrane cancel out, each pull weighted by how many channels that ion has. K⁺ has by far the most, so rest sits close to E<sub>K</sub>.</p>
+      <h3>Every ion votes</h3>
+      <p>In the first demo one ion had the membrane to itself, so V<sub>m</sub> went to that ion’s equilibrium potential and stopped. A real membrane has several kinds of channel open at once. Each ion pulls V<sub>m</sub> toward its own E, and two things set the strength of that pull: how many of its channels are open, and how far V<sub>m</sub> is from its E. The membrane comes to rest where the pulls in the two directions match.</p>
+      <h3>Why rest is not at E<sub>K</sub></h3>
+      <p>Na⁺ has only a few open channels at rest, but V<sub>m</sub> is about 137 mV away from E<sub>Na</sub>, so even that small vote counts. It drags V<sub>m</sub> a few millivolts above E<sub>K</sub>. Take the Na⁺ channel away and V<sub>m</sub> falls exactly to E<sub>K</sub>; add Na⁺ channels and it climbs toward E<sub>Na</sub>. That climb is the beginning of the action potential.</p>
+      <h3>Rest is a leak, not a lock</h3>
+      <p>Because V<sub>m</sub> is not at either ion’s equilibrium, K⁺ leaks out and Na⁺ leaks in the whole time the cell is “resting”. Left alone, those leaks would drain the gradients in a matter of hours and the resting potential would fade with them. The Na⁺/K⁺ pump prevents that: for each ATP it carries three Na⁺ out and two K⁺ in. Its main job is to maintain the gradients, and as a side effect it exports one net charge per cycle, which makes the inside a few millivolts more negative than the channels alone would. Holding the resting potential costs a sizeable share of a neuron’s energy budget.</p>
+      <div class="callout"><p><b>Common mix-up.</b> “The pump makes the resting potential.” Mostly not: the pump makes the <em>gradients</em>, and its direct electrical contribution is only a few millivolts. The resting potential itself comes from K⁺ leaking down the gradient the pump built. Switch the pump off here and V<sub>m</sub> barely moves at first; it fades only as the gradients drain.</p></div>
+      <h3>Steady state, not equilibrium</h3>
+      <p>The single-ion membrane in the first demo reached a true equilibrium: nothing moved on net and no energy was needed. The resting membrane is a steady state instead. V<sub>m</sub> is constant, but only because a continuous leak is matched by continuous pumping. That distinction is the reason the resting potential can be changed quickly: open more channels of one kind and the balance shifts at once.</p>
+      <h3>What moves it</h3>
+      <p>Two things change the resting potential. Opening more channels of one ion gives that ion more votes, so V<sub>m</sub> slides toward its E. And changing a concentration moves that ion’s E, which moves V<sub>m</sub> in proportion to the ion’s votes. Raising outside K⁺ is the clinical case: E<sub>K</sub> rises, V<sub>m</sub> follows because K⁺ dominates, and excitable cells such as heart muscle misbehave.</p>
+    </div>
+    <div class="rightcol">
+      <div class="card gloss">
+        <div class="hd"><h2>Words you will see</h2></div>
+        <dl>
+          <dt>Leak channel</dt><dd>A channel that is open at rest. Most of a neuron’s leak channels pass K⁺.</dd>
+          <dt>Conductance, g</dt><dd>How easily an ion crosses: more open channels, higher conductance. It is the weight of that ion’s vote.</dd>
+          <dt>Driving force, V<sub>m</sub> − E<sub>ion</sub></dt><dd>How far the membrane is from an ion’s equilibrium. Current through a channel is conductance times driving force.</dd>
+          <dt>Steady state</dt><dd>A voltage that holds still because opposite flows match, not because flow has stopped. Rest is a steady state; the first demo’s single-ion membrane was an equilibrium.</dd>
+          <dt>Na⁺/K⁺ pump</dt><dd>A transporter that uses ATP to move three Na⁺ out and two K⁺ in per cycle, maintaining both gradients.</dd>
+          <dt>Electrogenic</dt><dd>Moving net charge across the membrane. The pump is electrogenic because 3 out and 2 in leaves one charge unbalanced.</dd>
+          <dt>Hyperkalemia</dt><dd>High K⁺ in the blood. It raises E<sub>K</sub>, depolarizes resting cells, and can stop the heart.</dd>
+        </dl>
+      </div>
+      <div class="card tries">
+        <div class="hd"><h2>Try this in class</h2></div>
+        <ol>
+          <li>Set V<sub>m</sub> to 0 mV with the slider and let go. Watch it settle back to rest. Which ion does most of the work?</li>
+          <li>Remove the Na⁺ channel. Where does V<sub>m</sub> go, and why exactly there?</li>
+          <li>Add Na⁺ channels one at a time. How many before V<sub>m</sub> crosses 0 mV? That is a preview of the action potential.</li>
+          <li>Click the K⁺ channels closed one by one. What happens to the weight of the Na⁺ vote?</li>
+          <li>Turn the pump off and wait. Which drains first, the gradients or the voltage? Why does resting cost ATP?</li>
+          <li>Raise outside K⁺ from 5 to 10 mM. Predict the direction of the shift before you look. Why is high blood K⁺ dangerous for the heart?</li>
+          <li>Drag a K⁺ ion to a Na⁺ channel, then to a K⁺ channel. What does “selective” mean?</li>
+          <li>Add Cl⁻ channels until Cl⁻ has the most votes. Where does V<sub>m</sub> settle, and what does that tell you about E<sub>Cl</sub>?</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p><b>About the model.</b> Each open channel passes current in proportion to its driving force (the equivalent-circuit model used in electrophysiology), so the membrane settles at the conductance-weighted average of the equilibrium potentials, shifted a few millivolts by the pump’s current. Traffic through each channel splits into the two directions according to the same rule as the first demo, so each ion’s traffic balances exactly at its own Nernst potential. V<sub>m</sub> follows the average of the crossings and moves smoothly. The number of ions on screen, the membrane capacitance and the speed at which the gradients drain with the pump off are cartoon-scaled; concentrations are typical textbook values for a mammalian neuron. This is part 2 of the NeuroSim series, after <a class="link" href="https://torryscott.github.io/NeuroSim/nernst-tug-of-war.html">Nernst Tug-of-War</a> and before <a class="link" href="https://torryscott.github.io/NeuroSim/action-potential.html">Action Potential Tug-of-War</a>.</p>
+  </footer>
+</div>
+<div class="ghost mono" id="ghost"></div>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const TAU = Math.PI * 2;
+const R = 8.314, F = 96485, MINUS = '−';
+
+const IONS = {
+  K:  { key:'K',  sym:'K⁺',  z: 1, cin:140, cout:5,   glyph:'+',   sub:'K',  name:'potassium' },
+  Na: { key:'Na', sym:'Na⁺', z: 1, cin:15,  cout:145, glyph:'+',   sub:'Na', name:'sodium' },
+  Cl: { key:'Cl', sym:'Cl⁻', z:-1, cin:10,  cout:110, glyph:MINUS, sub:'Cl', name:'chloride' },
+};
+const KEYS = ['K', 'Na', 'Cl'];
+const G_UNIT = 0.3;          // ions per second per millivolt of driving force, per open channel (cartoon scale)
+const S_MV = 0.15;           // millivolts of Vm change per elementary charge crossing (cartoon capacitance)
+const KAPPA = 0.03;          // mM change per ion crossing when the pump is off (cartoon volume)
+const DOT_PER_MM = 0.55;
+const NSLOT = 15;
+const DEFAULT_LAYOUT = ['K', 'K', 'Na', 'K', 'K', 'K', 'pump', 'K', 'Cl', 'K', 'K'];
+
+const S = {
+  tempC: 37, mode: 'free', clampV: -70, speed: 1, pump: true, pumpSlot: 6,
+  conc: { K: { in: 140, out: 5 }, Na: { in: 15, out: 145 }, Cl: { in: 10, out: 110 } },
+  chans: [], Vm: -76, playing: true, simTime: 0, trace: [],
+};
+const VT = () => 1000 * R * (273.15 + S.tempC) / F;
+const E = k => VT() / IONS[k].z * Math.log(S.conc[k].out / S.conc[k].in);
+const nOpen = k => S.chans.reduce((a, c) => a + (c.type === k && c.open ? 1 : 0), 0);
+const nAll = k => S.chans.reduce((a, c) => a + (c.type === k ? 1 : 0), 0);
+const G = k => nOpen(k) * G_UNIT;
+const pumpActive = () => S.pump && S.pumpSlot >= 0;
+function currents(vm = S.Vm) {                    // charge flow per second, outward positive
+  const I = { sum: 0 };
+  for (const k of KEYS) { I[k] = G(k) * (vm - E(k)); I.sum += I[k]; }
+  I.pump = pumpActive() ? Math.max(0, -I.Na) / 3 : 0;   // 3 Na⁺ out and 2 K⁺ in per cycle: one net charge out
+  I.sum += I.pump;
+  return I;
+}
+function unidir(k) {                              // ions per second in each direction through this ion's channels
+  const z = IONS[k].z, g = G(k), vt = VT();
+  if (g <= 0) return { eff: 0, inf: 0 };
+  const dv = S.Vm - E(k), r = Math.exp(clamp(z * dv / vt, -30, 30)), ionOut = g * dv / z;
+  if (Math.abs(r - 1) < 1e-6) { const x = g * vt / (z * z); return { eff: x, inf: x }; }
+  const inf = ionOut / (r - 1);
+  return { eff: Math.max(0, inf * r), inf: Math.max(0, inf) };
+}
+function steadyVm() {                             // where the pulls balance
+  const sumG = KEYS.reduce((a, k) => a + G(k), 0);
+  if (sumG <= 0) return S.Vm;
+  let v = S.Vm;
+  for (let i = 0; i < 40; i++) v = (KEYS.reduce((a, k) => a + G(k) * E(k), 0) - currents(v).pump) / sumG;
+  return v;
+}
+
+/* ---------- formatting ---------- */
+const fmtSigned = (v, d = 1) => { const r = Math.abs(v).toFixed(d); return (parseFloat(r) === 0 ? '' : v < 0 ? MINUS : '+') + r; };
+const fmtCshort = c => parseFloat(c.toPrecision(3)).toString();
+const fmtRate = r => r >= 5 ? r.toFixed(0) : r.toFixed(1);
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+
+/* ---------- theme tokens ---------- */
+const T = { ion: {} };
+function readTokens() {
+  const cs = getComputedStyle(document.body);
+  const g = k => cs.getPropertyValue(k).trim();
+  T.stage = g('--stage'); T.stageIn = g('--stage-in'); T.stageOut = g('--stage-out');
+  T.ink = g('--ink'); T.ink2 = g('--ink-2'); T.muted = g('--muted'); T.line = g('--line'); T.line2 = g('--line-2');
+  T.membrane = g('--membrane'); T.core = g('--membrane-core'); T.pore = g('--pore'); T.glyph = g('--glyph'); T.ring = g('--ring');
+  T.on = g('--on'); T.onText = g('--on-text');
+  for (const k of KEYS) T.ion[k] = g('--ion-' + k);
+}
+const hexToRgba = (hex, a) => {
+  const h = hex.replace('#', '');
+  const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+};
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- geometry ---------- */
+const W = 640, H = 480, mL = 296, mR = 344, mx = 320, LANE = 112;
+const slotY = k => 124 + k * 24;
+const REG = {
+  in:  { x0: 14, x1: mL - 12, y0: LANE + 10, y1: H - 14 },
+  out: { x0: mR + 12, x1: W - 14, y0: LANE + 10, y1: H - 14 },
+};
+const mouth = (side, y) => ({ x: side === 'in' ? mL - 13 : mR + 13, y });
+const AX0 = 60, AX1 = 580, AXY = 90, VMIN = -120, VMAX = 80;
+const xOfV = v => AX0 + (clamp(v, VMIN, VMAX) - VMIN) / (VMAX - VMIN) * (AX1 - AX0);
+const CROWD_R = 5.5;
+const bulk = { in: [], out: [] };
+const transit = [];
+let drag = null, chanDrag = null, trayDrag = null;
+
+const slotFree = k => k !== S.pumpSlot && !S.chans.some(c => c.slot === k);
+function firstFreeSlot(nearY) {
+  let best = -1, bd = Infinity;
+  for (let k = 0; k < NSLOT; k++) if (slotFree(k)) { const d = nearY == null ? k : Math.abs(slotY(k) - nearY); if (d < bd) { bd = d; best = k; } }
+  return best;
+}
+const chanAt = k => S.chans.find(c => c.slot === k) || null;
+
+/* ---------- crowds ---------- */
+const targetCount = (side, k) => { const c = S.conc[k][side]; return c <= 0 ? 0 : Math.round(c * DOT_PER_MM); };
+const farEdge = side => side === 'in' ? REG.in.x0 - 14 : REG.out.x1 + 14;
+function newDot(side, k, fromEdge) {
+  const r = REG[side], y = r.y0 + Math.random() * (r.y1 - r.y0);
+  if (!fromEdge) return { ion: k, x: r.x0 + Math.random() * (r.x1 - r.x0), y, vx: 0, vy: 0, state: 'in', drift: 0 };
+  return { ion: k, x: farEdge(side), y, vx: 0, vy: 0, state: 'entering', drift: side === 'in' ? 1 : -1 };
+}
+function buildDots() {
+  bulk.in.length = 0; bulk.out.length = 0; transit.length = 0;
+  for (const side of ['in', 'out']) for (const k of KEYS) for (let i = 0, n = targetCount(side, k); i < n; i++) bulk[side].push(newDot(side, k, false));
+}
+const recTimer = {};
+function reconcile(dt) {                      // keep each crowd near the count its concentration calls for, gently
+  for (const side of ['in', 'out']) for (const k of KEYS) {
+    const id = side + k; recTimer[id] = (recTimer[id] || 0) + dt;
+    const arr = bulk[side], target = targetCount(side, k);
+    const counted = arr.filter(d => d.ion === k && d.state !== 'leaving').length
+      + transit.filter(t => t.ion === k && t.dst === side).length + (drag && drag.ion === k && drag.from === side ? 1 : 0);
+    const diff = target - counted;
+    let n = 0;
+    if (Math.abs(diff) >= 6) n = Math.min(3, Math.abs(diff));
+    else if (Math.abs(diff) >= 2 && recTimer[id] > 1.2) n = 1;
+    if (!n) continue;
+    recTimer[id] = 0;
+    if (diff > 0) for (let i = 0; i < n; i++) arr.push(newDot(side, k, true));
+    else {
+      const settled = arr.filter(d => d.ion === k && d.state === 'in');
+      const far = side === 'in' ? d => d.x : d => -d.x;
+      settled.sort((a, b) => far(a) - far(b));
+      for (let i = 0; i < Math.min(n, settled.length); i++) { settled[i].state = 'leaving'; settled[i].drift = side === 'in' ? -1 : 1; }
+    }
+  }
+}
+function updateDots(dt) {
+  const jig = reduceMotion ? 0 : 1, f = dt * 60;
+  for (const side of ['in', 'out']) {
+    const r = REG[side], arr = bulk[side];
+    for (let i = arr.length - 1; i >= 0; i--) {
+      const d = arr[i];
+      if (d.state === 'in') {
+        d.vx += (Math.random() - 0.5) * 0.7 * jig; d.vy += (Math.random() - 0.5) * 0.7 * jig;
+        d.vx *= 0.96; d.vy *= 0.96;
+        if (d.goal) {
+          const gx = d.goal.x - d.x, gy = d.goal.y - d.y, dist = Math.hypot(gx, gy);
+          if (dist < 12) d.goal = null; else { d.vx = gx / dist * 1.1 + d.vx * 0.3; d.vy = gy / dist * 1.1 + d.vy * 0.3; }
+        }
+        if (d.y < LANE + 64 && (d.x < 128 || d.x > W - 128)) d.vy += 0.35;            // leave the corner labels readable
+        const sp = Math.hypot(d.vx, d.vy); if (sp > 1.8) { d.vx *= 1.8 / sp; d.vy *= 1.8 / sp; }
+        d.x += d.vx * f; d.y += d.vy * f;
+        if (d.x < r.x0) { d.x = r.x0; d.vx = Math.abs(d.vx); } else if (d.x > r.x1) { d.x = r.x1; d.vx = -Math.abs(d.vx); }
+      } else {
+        d.vx = d.drift * (d.state === 'leaving' ? 2.6 : 1.3); d.vy += (Math.random() - 0.5) * 0.3 * jig; d.vy *= 0.9;
+        d.x += d.vx * f; d.y += d.vy * f;
+        if (d.state === 'entering' && ((d.drift > 0 && d.x > r.x0 + 24) || (d.drift < 0 && d.x < r.x1 - 24))) { d.state = 'in'; d.drift = 0; d.vx *= 0.5; }
+        if (d.state === 'leaving' && (d.x < r.x0 - 14 || d.x > r.x1 + 14)) { arr.splice(i, 1); continue; }
+      }
+      if (d.y < r.y0) { d.y = r.y0; d.vy = Math.abs(d.vy); } else if (d.y > r.y1) { d.y = r.y1; d.vy = -Math.abs(d.vy); }
+    }
+  }
+}
+function takeNearest(arr, m, ok) {
+  let best = -1, bd = Infinity;
+  for (let i = 0; i < arr.length; i++) { const d = arr[i]; if (ok && !ok(d)) continue; const dd = Math.hypot(d.x - m.x, d.y - m.y); if (dd < bd) { bd = dd; best = i; } }
+  return best >= 0 ? arr.splice(best, 1)[0] : null;
+}
+function spawnCrossing(k, outward, slot, delay = 0, viaPump = false, onCross = null) {
+  const src = outward ? 'in' : 'out', dst = outward ? 'out' : 'in', y = slotY(slot), m = mouth(src, y);
+  let d = takeNearest(bulk[src], m, x => x.ion === k && x.state === 'in');
+  if (!d) d = { x: src === 'in' ? REG.in.x0 + 10 : REG.out.x1 - 10, y: clamp(y + (Math.random() - 0.5) * 100, REG.in.y0, REG.in.y1) };
+  const dur = 0.25 + Math.hypot(d.x - m.x, d.y - m.y) / 200;
+  transit.push({ ion: k, src, dst, x0: d.x, y0: d.y, x: d.x, y: d.y, t: -delay, phase: 0, dur, outward, slot, viaPump, onCross, crossed: false });
+}
+const ease = p => p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+function updateTransit(dt) {
+  for (let i = transit.length - 1; i >= 0; i--) {
+    const tr = transit[i]; tr.t += dt;
+    if (tr.t < 0) continue;
+    const y = slotY(tr.slot), ms = mouth(tr.src, y), md = mouth(tr.dst, y);
+    if (tr.phase === 0) {
+      const p = Math.min(1, tr.t / tr.dur), e = ease(p);
+      tr.x = tr.x0 + (ms.x - tr.x0) * e; tr.y = tr.y0 + (ms.y - tr.y0) * e;
+      if (p >= 1) { tr.phase = 1; tr.t = 0; }
+    } else {
+      const p = Math.min(1, tr.t / (tr.viaPump ? 0.7 : 0.45));
+      tr.x = ms.x + (md.x - ms.x) * ease(p); tr.y = y;
+      if (!tr.crossed && p >= 0.5) { tr.crossed = true; if (tr.onCross) tr.onCross(); }
+      if (p >= 1) {
+        transit.splice(i, 1);
+        const rg = REG[tr.dst];
+        bulk[tr.dst].push({ ion: tr.ion, x: md.x, y, vx: tr.outward ? 1 : -1, vy: 0, state: 'in', drift: 0,
+          goal: { x: rg.x0 + 20 + Math.random() * (rg.x1 - rg.x0 - 40), y: rg.y0 + 10 + Math.random() * (rg.y1 - rg.y0 - 20) } });
+      }
+    }
+  }
+}
+function gauss() { let u = 0, v = 0; while (u === 0) u = Math.random(); while (v === 0) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(TAU * v); }
+function poisson(m) {
+  if (m <= 0) return 0;
+  if (m > 40) return Math.max(0, Math.round(m + Math.sqrt(m) * gauss()));
+  const L = Math.exp(-m); let k = 0, p = 1;
+  do { k++; p *= Math.random(); } while (p > L);
+  return k - 1;
+}
+const openChannelOf = k => { const list = S.chans.filter(c => c.type === k && c.open); return list.length ? list[Math.floor(Math.random() * list.length)] : null; };
+function pumpCycle() {
+  if (S.pumpSlot < 0) return;
+  for (let i = 0; i < 3; i++) spawnCrossing('Na', true, S.pumpSlot, i * 0.15, true);
+  for (let i = 0; i < 2; i++) spawnCrossing('K', false, S.pumpSlot, 0.3 + i * 0.15, true);
+}
+let pumpAcc = 0;
+function stepSim(dtSim) {
+  if (S.mode === 'free' && performance.now() > holdUntil) {
+    const n = Math.max(1, Math.ceil(dtSim * 60)), h = dtSim / n;
+    for (let i = 0; i < n; i++) S.Vm += clamp(-S_MV * currents().sum * h, -3, 3);
+  }
+  const I = currents();
+  if (!pumpActive()) {                                       // nothing returns the leaked ions, so the gradients drain (sped up)
+    for (const k of KEYS) {
+      const ionOut = I[k] / IONS[k].z;
+      S.conc[k].in = Math.max(0.5, S.conc[k].in - ionOut * KAPPA * dtSim);
+      S.conc[k].out = Math.max(0.5, S.conc[k].out + ionOut * KAPPA * dtSim);
+    }
+  }
+  let total = 0; const uni = {};
+  for (const k of KEYS) { uni[k] = unidir(k); total += uni[k].eff + uni[k].inf; }
+  const pVis = Math.min(1, 5 / (total * S.speed + 1e-9));  // only a sample of the traffic is drawn
+  for (const k of KEYS) {
+    const nO = poisson(uni[k].eff * dtSim * pVis), nI = poisson(uni[k].inf * dtSim * pVis);
+    for (let i = 0; i < nO; i++) { const c = openChannelOf(k); if (c) spawnCrossing(k, true, c.slot); }
+    for (let i = 0; i < nI; i++) { const c = openChannelOf(k); if (c) spawnCrossing(k, false, c.slot); }
+  }
+  if (pumpActive() && I.pump > 0) { pumpAcc += I.pump * dtSim * pVis; while (pumpAcc >= 1) { pumpAcc -= 1; pumpCycle(); } }
+}
+function pushTrace() {
+  S.trace.push({ t: S.simTime, v: S.Vm });
+  while (S.trace.length && S.trace[0].t < S.simTime - 62) S.trace.shift();
+}
+function layoutDefault() {
+  S.chans = []; S.pumpSlot = -1;
+  DEFAULT_LAYOUT.forEach((t, k) => { if (t === 'pump') S.pumpSlot = k; else S.chans.push({ type: t, open: true, slot: k }); });
+}
+function reset() {
+  for (const k of KEYS) { S.conc[k].in = IONS[k].cin; S.conc[k].out = IONS[k].cout; }
+  layoutDefault(); S.pump = true; S.mode = 'free'; balancedLatch = false; handNote = null;
+  S.Vm = -75; S.Vm = steadyVm(); S.clampV = S.Vm;
+  S.simTime = 0; S.trace = []; pumpAcc = 0; transit.length = 0; drag = null; chanDrag = null;
+  buildDots(); pushTrace(); setPlaying(true); updateStatic();
+}
+function setPlaying(p) {
+  S.playing = p;
+  $('#play').textContent = p ? 'Pause' : 'Play';
+  $('#play').setAttribute('aria-pressed', p ? 'true' : 'false');
+}
+function nextIon() {
+  setPlaying(false);
+  const opts = [];
+  for (const k of KEYS) { const u = unidir(k); if (u.eff > 0) opts.push({ k, outward: true, r: u.eff }); if (u.inf > 0) opts.push({ k, outward: false, r: u.inf }); }
+  const tot = opts.reduce((a, o) => a + o.r, 0);
+  if (tot <= 0) { updateUI(); return; }
+  let pick = Math.random() * tot, o = opts[0];
+  for (const c of opts) { pick -= c.r; if (pick <= 0) { o = c; break; } }
+  const ch = openChannelOf(o.k); if (!ch) return;
+  S.simTime += 1 / tot;
+  spawnCrossing(o.k, o.outward, ch.slot, 0, false, () => {
+    if (S.mode === 'free') S.Vm += -S_MV * IONS[o.k].z * (o.outward ? 1 : -1);
+    pushTrace(); updateUI();
+  });
+}
+
+/* ---------- stage drawing ---------- */
+const stage = $('#stage'), ctx = stage.getContext('2d');
+function fitStage() {
+  const cssW = stage.clientWidth || 640, dpr = window.devicePixelRatio || 1, sc = cssW / W;
+  stage.width = Math.round(W * sc * dpr); stage.height = Math.round(H * sc * dpr);
+  ctx.setTransform(sc * dpr, 0, 0, sc * dpr, 0, 0);
+}
+const FONT_UI = '"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif';
+const FONT_MONO = '"IBM Plex Mono", ui-monospace, Menlo, monospace';
+function haloText(c, text, x, y, font, color, align = 'center', baseline = 'middle') {
+  c.font = font; c.textAlign = align; c.textBaseline = baseline;
+  c.lineJoin = 'round'; c.lineWidth = 4; c.strokeStyle = T.stage; c.strokeText(text, x, y);
+  c.fillStyle = color; c.fillText(text, x, y);
+}
+function drawArrow(c, x0, x1, y, w, color, dash) {
+  const dir = Math.sign(x1 - x0) || 1, len = Math.abs(x1 - x0);
+  const headL = Math.min(12, Math.max(6, len * 0.6)), headW = w + 3;
+  const shaftEnd = x1 - dir * headL * 0.7;
+  c.lineCap = 'round'; c.setLineDash([]); c.strokeStyle = T.stage; c.lineWidth = w + 5;
+  c.beginPath(); c.moveTo(x0, y); c.lineTo(shaftEnd, y); c.stroke();
+  c.lineJoin = 'round'; c.lineWidth = 4;
+  c.beginPath(); c.moveTo(x1, y); c.lineTo(x1 - dir * headL, y - headW); c.lineTo(x1 - dir * headL, y + headW); c.closePath(); c.stroke();
+  c.setLineDash(dash || []); c.strokeStyle = color; c.lineWidth = w;
+  c.beginPath(); c.moveTo(x0, y); c.lineTo(shaftEnd, y); c.stroke();
+  c.setLineDash([]); c.fillStyle = color;
+  c.beginPath(); c.moveTo(x1, y); c.lineTo(x1 - dir * headL, y - headW); c.lineTo(x1 - dir * headL, y + headW); c.closePath(); c.fill();
+}
+function drawIonDot(c, k, x, y, r, alpha = 1) {
+  c.globalAlpha = alpha;
+  c.beginPath(); c.arc(x, y, r, 0, TAU); c.fillStyle = T.ion[k]; c.fill();
+  c.lineWidth = 1; c.strokeStyle = T.ring; c.stroke();
+  c.fillStyle = T.glyph; c.font = `700 10px ${FONT_MONO}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText(IONS[k].glyph, x, y + 0.5);
+  c.globalAlpha = 1;
+}
+function drawChannelIcon(c, type, y, open, x = mx, ghost = false) {
+  const col = T.ion[type], x0 = x - 28, w = 56;
+  c.globalAlpha = ghost ? 0.7 : 1;
+  c.fillStyle = hexToRgba(col, open ? 0.26 : 0.1); c.strokeStyle = col; c.lineWidth = 1.3;
+  c.beginPath(); c.roundRect(x0, y - 10.5, w, 7.5, 3); c.fill(); c.stroke();
+  c.beginPath(); c.roundRect(x0, y + 3, w, 7.5, 3); c.fill(); c.stroke();
+  if (!open) { c.fillStyle = T.ink; c.globalAlpha *= 0.85; c.beginPath(); c.roundRect(x0 + 2, y - 2.5, w - 4, 5, 2); c.fill(); }
+  c.globalAlpha = 1;
+}
+function drawPumpIcon(c, y, x = mx, ghost = false) {
+  const on = S.pump;
+  c.globalAlpha = ghost ? 0.7 : on ? 1 : 0.45;
+  c.fillStyle = T.on; c.beginPath(); c.roundRect(x - 30, y - 11, 60, 22, 5); c.fill();
+  // 3 Na⁺ out (top), 2 K⁺ in (bottom)
+  c.strokeStyle = T.ion.Na; c.lineWidth = 2.2; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(x - 18, y - 5); c.lineTo(x + 14, y - 5); c.stroke();
+  c.fillStyle = T.ion.Na; c.beginPath(); c.moveTo(x + 20, y - 5); c.lineTo(x + 12, y - 9); c.lineTo(x + 12, y - 1); c.closePath(); c.fill();
+  c.strokeStyle = T.ion.K;
+  c.beginPath(); c.moveTo(x + 18, y + 5); c.lineTo(x - 14, y + 5); c.stroke();
+  c.fillStyle = T.ion.K; c.beginPath(); c.moveTo(x - 20, y + 5); c.lineTo(x - 12, y + 1); c.lineTo(x - 12, y + 9); c.closePath(); c.fill();
+  c.globalAlpha = 1;
+  if (!on && !ghost) haloText(c, 'pump off', x + 40, y, `700 11px ${FONT_UI}`, T.ink2, 'left');
+}
+function drawStage() {
+  const c = ctx, I = currents();
+  c.setLineDash([]); c.globalAlpha = 1;
+  c.clearRect(0, 0, W, H);
+  c.fillStyle = T.stageIn; c.fillRect(0, 0, mL, H);
+  c.fillStyle = T.stageOut; c.fillRect(mR, 0, W - mR, H);
+  c.fillStyle = T.core; c.fillRect(mL, LANE, mR - mL, H - LANE);
+  c.fillStyle = T.stage; c.fillRect(0, 0, W, LANE);
+
+  // membrane: lipid where there is no protein, channel and pump icons in their slots
+  for (let k = 0; k < NSLOT; k++) {
+    const y = slotY(k), ch = chanAt(k);
+    if (chanDrag && chanDrag.slot === k) continue;
+    if (k === S.pumpSlot) continue;
+    if (!ch) { c.fillStyle = T.membrane; c.beginPath(); c.arc(mL + 7, y, 3.5, 0, TAU); c.arc(mR - 7, y, 3.5, 0, TAU); c.fill(); continue; }
+    c.fillStyle = T.pore; c.fillRect(mL - 2, y - 3, mR - mL + 4, 6);
+    drawChannelIcon(c, ch.type, y, ch.open);
+  }
+
+  // crowds and ions in transit through channels
+  for (const side of ['in', 'out']) for (const d of bulk[side]) drawIonDot(c, d.ion, d.x, d.y, CROWD_R);
+  for (const tr of transit) {
+    if (tr.t < 0) { drawIonDot(c, tr.ion, tr.x0, tr.y0, CROWD_R); continue; }
+    drawIonDot(c, tr.ion, tr.x, tr.y, tr.phase === 1 ? 4.5 : CROWD_R);
+    if (!tr.viaPump) { c.strokeStyle = T.ink; c.lineWidth = 1.5; c.beginPath(); c.arc(tr.x, tr.y, 9, 0, TAU); c.stroke(); }
+  }
+  if (S.pumpSlot >= 0 && !(chanDrag && chanDrag.type === 'pump')) drawPumpIcon(c, slotY(S.pumpSlot));   // on top, so carried ions vanish inside it
+
+  // reservoir fades
+  let g = c.createLinearGradient(0, 0, 46, 0); g.addColorStop(0, hexToRgba(T.stageIn, 1)); g.addColorStop(1, hexToRgba(T.stageIn, 0));
+  c.fillStyle = g; c.fillRect(0, LANE, 46, H - LANE);
+  g = c.createLinearGradient(W - 46, 0, W, 0); g.addColorStop(0, hexToRgba(T.stageOut, 0)); g.addColorStop(1, hexToRgba(T.stageOut, 1));
+  c.fillStyle = g; c.fillRect(W - 46, LANE, 46, H - LANE);
+
+  // concentration labels in the box corners
+  KEYS.forEach((k, i) => {
+    const y = LANE + 20 + i * 15;
+    c.beginPath(); c.arc(20, y, 4, 0, TAU); c.fillStyle = T.ion[k]; c.fill();
+    haloText(c, `${IONS[k].sym} ${fmtCshort(S.conc[k].in)} mM`, 30, y, `600 11px ${FONT_MONO}`, T.ink, 'left');
+    c.beginPath(); c.arc(W - 20, y, 4, 0, TAU); c.fillStyle = T.ion[k]; c.fill();
+    haloText(c, `${IONS[k].sym} ${fmtCshort(S.conc[k].out)} mM`, W - 30, y, `600 11px ${FONT_MONO}`, T.ink, 'right');
+  });
+
+  // the lane: voltage axis with each ion's equilibrium potential and its pull on Vm
+  haloText(c, 'INSIDE · cytosol', 16, 14, `700 12px ${FONT_UI}`, T.ink2, 'left');
+  haloText(c, 'OUTSIDE · extracellular', W - 16, 14, `700 12px ${FONT_UI}`, T.ink2, 'right');
+  haloText(c, S.mode === 'clamp' ? 'membrane voltage · held' : 'membrane voltage', mx, 12, `700 11px ${FONT_UI}`, T.ink2);
+  haloText(c, `${fmtSigned(S.Vm, 1)} mV`, mx, 30, `600 16px ${FONT_MONO}`, T.ink);
+  c.strokeStyle = T.muted; c.lineWidth = 1.5; c.beginPath(); c.moveTo(AX0, AXY); c.lineTo(AX1, AXY); c.stroke();
+  for (let v = VMIN; v <= VMAX; v += 20) { c.strokeStyle = T.line; c.lineWidth = 1; c.beginPath(); c.moveTo(xOfV(v), AXY - 3); c.lineTo(xOfV(v), AXY + 3); c.stroke(); }
+  c.strokeStyle = T.muted; c.beginPath(); c.moveTo(xOfV(0), AXY - 5); c.lineTo(xOfV(0), AXY + 5); c.stroke();
+  haloText(c, 'each ion’s E ▾', AX0, 107, `700 10px ${FONT_UI}`, T.muted, 'left');
+  haloText(c, '0 mV', xOfV(0), 107, `600 10px ${FONT_MONO}`, T.muted);
+  const xv = xOfV(S.Vm);
+  const rows = { Cl: 47, Na: 59, K: 71 };
+  for (const k of KEYS) {
+    const e = E(k), xe = xOfV(e), n = nOpen(k), col = T.ion[k];
+    c.fillStyle = col; c.beginPath(); c.moveTo(xe, AXY + 2); c.lineTo(xe - 5, AXY + 9); c.lineTo(xe + 5, AXY + 9); c.closePath(); c.fill();
+    haloText(c, `${IONS[k].sym} ${fmtSigned(e, 0)}`, xe, 107, `600 10px ${FONT_MONO}`, T.ink2);
+    if (n === 0) continue;
+    const y = rows[k], w = clamp(1.5 + n * 0.7, 2, 9);
+    if (Math.abs(xe - xv) < 6) { c.fillStyle = col; c.beginPath(); c.arc(xv, y, 3, 0, TAU); c.fill(); }
+    else drawArrow(c, xv, xe, y, w, col);
+    const dir = xe >= xv ? 1 : -1;
+    haloText(c, `${IONS[k].sym} ×${n}`, xe + dir * 8, y, `700 11px ${FONT_UI}`, T.ink2, dir > 0 ? 'left' : 'right');
+  }
+  if (I.pump > 0) {
+    const sumG = KEYS.reduce((a, k) => a + G(k), 0), shift = sumG > 0 ? I.pump / sumG : 0, x1 = xOfV(S.Vm - shift);
+    if (xv - x1 > 3) drawArrow(c, xv, x1, AXY - 9, 3, T.ink);
+    haloText(c, 'pump', Math.min(x1, xv - 4) - 6, AXY - 9, `700 10px ${FONT_UI}`, T.ink2, 'right');
+  }
+  c.fillStyle = T.stage; c.beginPath(); c.arc(xv, AXY, 8, 0, TAU); c.fill();
+  c.fillStyle = T.ink; c.beginPath(); c.arc(xv, AXY, 6, 0, TAU); c.fill();
+
+  // hands on: the ion in hand, and a channel being dragged
+  if (drag) {
+    drawIonDot(c, drag.ion, drag.x, drag.y, CROWD_R + 1);
+    c.strokeStyle = T.ink; c.lineWidth = 1.5; c.beginPath(); c.arc(drag.x, drag.y, 10.5, 0, TAU); c.stroke();
+    if (drag.note) haloText(c, drag.note, drag.x, drag.y - 19, `700 11px ${FONT_UI}`, T.ion[drag.ion]);
+  }
+  if (chanDrag && chanDrag.moved) {
+    if (chanDrag.type === 'pump') drawPumpIcon(c, chanDrag.y, chanDrag.x, true); else drawChannelIcon(c, chanDrag.type, chanDrag.y, true, chanDrag.x, true);
+    const inBand = chanDrag.x > mL - 40 && chanDrag.x < mR + 40 && chanDrag.y > LANE;
+    haloText(c, inBand ? 'drop to place it here' : 'drop outside the membrane to remove it', chanDrag.x, chanDrag.y - 20, `700 11px ${FONT_UI}`, T.ink2);
+  }
+}
+
+/* ---------- trace ---------- */
+const trace = $('#trace'), tctx = trace.getContext('2d'), tip = $('#tip');
+let hoverX = null;
+function fitTrace() {
+  const dpr = window.devicePixelRatio || 1;
+  trace.width = Math.round(trace.clientWidth * dpr); trace.height = Math.round(trace.clientHeight * dpr);
+  tctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function drawTrace() {
+  const c = tctx, w = trace.clientWidth, h = trace.clientHeight;
+  const padL = 44, padR = 118, padT = 10, padB = 24;
+  c.clearRect(0, 0, w, h);
+  let yR = Math.max(100, Math.abs(S.Vm) + 15);
+  for (const k of KEYS) yR = Math.max(yR, Math.abs(E(k)) + 15);
+  yR = Math.ceil(yR / 50) * 50;
+  const t1 = Math.max(60, S.simTime), t0 = t1 - 60;
+  const X = t => padL + (t - t0) / 60 * (w - padL - padR);
+  const Y = v => padT + (yR - v) / (2 * yR) * (h - padT - padB);
+  c.font = `11px ${FONT_MONO}`; c.textBaseline = 'middle'; c.textAlign = 'right';
+  for (let v = -yR; v <= yR; v += 50) {
+    c.strokeStyle = v === 0 ? T.line : T.line2; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(padL, Y(v)); c.lineTo(w - padR, Y(v)); c.stroke();
+    c.fillStyle = T.muted; c.fillText((v > 0 ? '+' : v < 0 ? MINUS : '') + Math.abs(v), padL - 8, Y(v));
+  }
+  c.textAlign = 'center'; c.textBaseline = 'top';
+  for (let t = Math.ceil(t0 / 10) * 10; t <= t1 + 0.01; t += 10) { c.fillStyle = T.muted; c.fillText(t.toFixed(0) + ' s', X(t), h - padB + 7); }
+  c.save(); c.translate(12, (padT + h - padB) / 2); c.rotate(-Math.PI / 2); c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillStyle = T.muted; c.font = `11px ${FONT_UI}`; c.fillText('mV', 0, 0); c.restore();
+  const labels = [];
+  for (const k of KEYS) {
+    const e = E(k), on = nOpen(k) > 0;
+    c.setLineDash([6, 4]); c.strokeStyle = T.ion[k]; c.lineWidth = on ? 1.5 : 1; c.globalAlpha = on ? 1 : 0.45;
+    c.beginPath(); c.moveTo(padL, Y(e)); c.lineTo(w - padR, Y(e)); c.stroke(); c.setLineDash([]); c.globalAlpha = 1;
+    labels.push({ y: Y(e), text: `E(${IONS[k].sym}) ${fmtSigned(e, 0)}`, color: T.ink2 });
+  }
+  const pts = S.trace.filter(s => s.t >= t0 - 0.5);
+  if (pts.length) {
+    c.strokeStyle = T.ink; c.lineWidth = 2; c.lineJoin = 'round'; c.beginPath();
+    pts.forEach((s, i) => { const x = Math.max(padL, X(s.t)); i ? c.lineTo(x, Y(s.v)) : c.moveTo(x, Y(s.v)); });
+    c.stroke();
+    const last = pts[pts.length - 1];
+    c.fillStyle = T.ink; c.beginPath(); c.arc(X(last.t), Y(last.v), 3.5, 0, TAU); c.fill();
+    labels.push({ y: Y(last.v), text: `Vm ${fmtSigned(last.v, 1)}`, color: T.ink, bold: true });
+  }
+  labels.sort((a, b) => a.y - b.y);                                     // keep the right-hand labels from overlapping
+  for (let i = 1; i < labels.length; i++) if (labels[i].y - labels[i - 1].y < 13) labels[i].y = labels[i - 1].y + 13;
+  c.textAlign = 'left'; c.textBaseline = 'middle';
+  for (const l of labels) { c.font = `${l.bold ? 600 : 500} 11px ${FONT_MONO}`; c.fillStyle = l.color; c.fillText(l.text, w - padR + 8, l.y); }
+  if (hoverX !== null && pts.length) {
+    const tH = t0 + (hoverX - padL) / (w - padL - padR) * 60;
+    let best = pts[0];
+    for (const s of pts) if (Math.abs(s.t - tH) < Math.abs(best.t - tH)) best = s;
+    if (Math.abs(best.t - tH) < 2) {
+      c.strokeStyle = T.muted; c.lineWidth = 1; c.setLineDash([3, 3]);
+      c.beginPath(); c.moveTo(X(best.t), padT); c.lineTo(X(best.t), h - padB); c.stroke(); c.setLineDash([]);
+      c.fillStyle = T.stage; c.beginPath(); c.arc(X(best.t), Y(best.v), 5, 0, TAU); c.fill();
+      c.fillStyle = T.ink; c.beginPath(); c.arc(X(best.t), Y(best.v), 3.5, 0, TAU); c.fill();
+      tip.style.display = 'block'; tip.style.left = X(best.t) + 'px'; tip.style.top = Y(best.v) + 'px';
+      tip.textContent = `t ${best.t.toFixed(1)} s · Vm ${fmtSigned(best.v, 1)} mV`;
+    } else tip.style.display = 'none';
+  } else tip.style.display = 'none';
+}
+trace.addEventListener('mousemove', e => { hoverX = e.offsetX; });
+trace.addEventListener('mouseleave', () => { hoverX = null; });
+
+/* ---------- narrator ---------- */
+let balancedLatch = false, narrKey = '', narrAt = 0, handNote = null, holdUntil = 0;
+const note = (html, ms = 7000) => { handNote = { until: performance.now() + ms, html }; };
+const sym = k => IONS[k].sym, Esub = k => `E<sub>${IONS[k].sub}</sub>`;
+function pullSummary(I) {
+  const parts = [];
+  for (const k of KEYS) {
+    const n = nOpen(k); if (!n) continue;
+    const gap = S.Vm - E(k), ionOut = I[k] / IONS[k].z;
+    parts.push(`${sym(k)} (${plural(n, 'channel')}, ${Math.abs(gap).toFixed(0)} mV from ${Esub(k)}) pulls ${I[k] > 0 ? 'down' : 'up'}, ${fmtRate(Math.abs(ionOut))} crossings/s`);
+  }
+  if (I.pump > 0) parts.push(`the pump adds a small down-pull (${fmtRate(I.pump)} net charges out/s)`);
+  return parts.join('; ') + '.';
+}
+function narrate(I) {
+  const open = KEYS.filter(k => nOpen(k) > 0), vm = fmtSigned(S.Vm, 0);
+  if (open.length === 0) return `No open channels, so nothing can cross and V<sub>m</sub> stays at ${vm} mV. Add a channel from the tray, or click a closed one to reopen it.`;
+  if (S.mode === 'clamp') return `You are holding V<sub>m</sub> at ${vm} mV. ${pullSummary(I)} The hold supplies whatever current is needed to keep it there.`;
+  const drained = KEYS.some(k => Math.abs(S.conc[k].in - IONS[k].cin) > 0.05 * IONS[k].cin);
+  if (open.length === 1) {
+    const k = open[0], near = Math.abs(S.Vm - E(k)) < 2;
+    return `Only ${sym(k)} channels are open, so ${sym(k)} is the only voter. V<sub>m</sub> ${near ? 'sits at' : 'is heading to'} ${Esub(k)} = ${fmtSigned(E(k), 1)} mV, exactly the Nernst potential from the first demo.${pumpActive() ? '' : ' With the pump off, that target itself is slowly draining toward 0.'}`;
+  }
+  if (!pumpActive() && drained) return `The pump is off, so nothing returns the leaked ions and the gradients are draining: ${Esub('K')} has slid to ${fmtSigned(E('K'), 0)} mV and ${Esub('Na')} to ${fmtSigned(E('Na'), 0)} mV. V<sub>m</sub> follows them toward 0. In a real neuron this takes hours; here it is sped up.`;
+  if (balancedLatch) return `At rest, ${vm} mV. ${pullSummary(I)} The pulls balance, so V<sub>m</sub> holds still even though ${sym('K')} leaks out and ${sym('Na')} leaks in the whole time${pumpActive() ? '; the pump carries them back, which is what resting costs in ATP.' : '. With the pump off, those leaks are slowly draining the gradients.'}`;
+  const down = I.sum > 0;
+  return `V<sub>m</sub> is ${down ? 'falling' : 'rising'} because the pulls do not balance yet. ${pullSummary(I)} It will settle where the down-pulls and the up-pulls match.`;
+}
+
+/* ---------- UI ---------- */
+function setBar(el, value, scale) {
+  const pct = Math.min(50, Math.abs(value) / scale * 50);
+  el.classList.toggle('in', value >= 0); el.classList.toggle('out', value < 0);   // outward current pulls Vm down (left)
+  el.style.width = pct + '%';
+}
+function updateUI() {
+  const I = currents();
+  const scale = Math.max(60, ...KEYS.map(k => Math.abs(I[k])), I.pump);
+  for (const k of KEYS) {
+    const n = nOpen(k), ionOut = I[k] / IONS[k].z;
+    setBar($('#b' + k), I[k], scale);
+    $('#r' + k).textContent = n ? `· ${plural(n, 'open channel')}` : `· ${nAll(k) ? 'all closed' : 'no channels'}`;
+    $('#v' + k).textContent = n ? `${fmtRate(Math.abs(ionOut))}/s ${ionOut > 0 ? 'out' : 'in'} · pulls ${I[k] > 0 ? 'down' : 'up'}` : 'no vote';
+  }
+  setBar($('#bPump'), I.pump, scale);
+  $('#rPump').textContent = S.pumpSlot < 0 ? '· removed' : S.pump ? '' : '· off';
+  $('#vPump').textContent = I.pump > 0 ? `${fmtRate(I.pump)} charges/s out · pulls down` : pumpActive() ? 'idle' : 'no pull';
+  $('#roVm').innerHTML = `${fmtSigned(S.Vm, 1)}<small>mV</small>`;
+  $('#roVmNote').textContent = S.mode === 'clamp' ? 'held where you set it' : 'inside relative to outside';
+  if (performance.now() > holdUntil) $('#rVm').value = Math.round(S.Vm);
+  for (const k of KEYS) $('#e' + k).innerHTML = `${fmtSigned(E(k), 1)} mV`;
+  const sumG = KEYS.reduce((a, k) => a + G(k), 0);
+  const settle = Math.abs(I.sum) < Math.max(0.6, 0.04 * KEYS.reduce((a, k) => a + Math.abs(I[k]), 0));
+  if (S.mode === 'free') { if (settle) balancedLatch = true; else if (Math.abs(I.sum) > Math.max(2, 0.12 * KEYS.reduce((a, k) => a + Math.abs(I[k]), 0))) balancedLatch = false; } else balancedLatch = false;
+  const txt = (handNote && performance.now() < handNote.until) ? handNote.html : narrate(I);
+  if (txt.slice(0, 40) !== narrKey || performance.now() - narrAt > 1000) { $('#narrText').innerHTML = txt; narrKey = txt.slice(0, 40); narrAt = performance.now(); }
+  // equation (full view)
+  if (sumG > 0) {
+    const num = KEYS.map(k => `${nOpen(k)} × (${fmtSigned(E(k), 1)})`).join(' + ');
+    const noPump = KEYS.reduce((a, k) => a + G(k) * E(k), 0) / sumG;
+    $('#eq').innerHTML = `V<sub>m</sub> = <span class="frac"><span>g<sub>K</sub>E<sub>K</sub> + g<sub>Na</sub>E<sub>Na</sub> + g<sub>Cl</sub>E<sub>Cl</sub></span><span>g<sub>K</sub> + g<sub>Na</sub> + g<sub>Cl</sub></span></span> = <span class="frac"><span>${num}</span><span>${KEYS.map(nOpen).join(' + ')}</span></span> = <b>${fmtSigned(noPump, 1)} mV</b>${I.pump > 0 ? `, and the pump’s current shifts the balance to <b>${fmtSigned(steadyVm(), 1)} mV</b>` : ''}`;
+  } else $('#eq').innerHTML = 'No open channels: the equation has nothing to average.';
+}
+function updateStatic() {
+  readTokens();
+  for (const k of KEYS) $('#cnt' + k).textContent = nAll(k);
+  $$('#pumpSeg button').forEach(b => b.setAttribute('aria-checked', (b.dataset.pump === '1') === S.pump ? 'true' : 'false'));
+  $('#rKout').value = clamp(S.conc.K.out, 1, 30); $('#nKout').value = fmtCshort(S.conc.K.out);
+  for (const k of KEYS) { $('#c' + k + 'in').value = fmtCshort(S.conc[k].in); $('#c' + k + 'out').value = fmtCshort(S.conc[k].out); }
+  $('#tempLbl').textContent = `${S.tempC} °C · ${(VT() * Math.LN10).toFixed(1)} mV per decade`;
+  $('#holdBtn').setAttribute('aria-pressed', S.mode === 'clamp' ? 'true' : 'false'); $('#holdBtn').textContent = S.mode === 'clamp' ? 'Holding' : 'Hold';
+  updateUI();
+}
+
+/* ---------- channel edits ---------- */
+function addChannel(type, nearY, silent) {
+  if (type === 'pump') {
+    if (S.pumpSlot >= 0) { note('There is already a pump in the membrane. Use the control to switch it on or off.'); updateStatic(); return false; }
+    const s = firstFreeSlot(nearY); if (s < 0) { note('The membrane is full. Drag a channel out first.'); updateStatic(); return false; }
+    S.pumpSlot = s; S.pump = true;
+    if (!silent) note(`Pump back in place: it carries 3 Na⁺ out and 2 K⁺ in per ATP, so the gradients hold and V<sub>m</sub> gains a few mV of extra negativity.`);
+    updateStatic(); return true;
+  }
+  const s = firstFreeSlot(nearY);
+  if (s < 0) { note('The membrane is full. Drag a channel out first.'); updateStatic(); return false; }
+  S.chans.push({ type, open: true, slot: s });
+  balancedLatch = false;
+  const n = nOpen(type), target = steadyVm();
+  if (!silent) note(`You added a ${sym(type)} channel: ${sym(type)} now has ${plural(n, 'vote')}. Its pull just got stronger, so V<sub>m</sub> will move toward ${Esub(type)} (${fmtSigned(E(type), 0)} mV) and settle near ${fmtSigned(target, 0)} mV, where the other pulls match it again.`);
+  updateStatic(); return true;
+}
+function removeChannel(type, slotWanted, silent) {
+  if (type === 'pump') {
+    if (S.pumpSlot < 0) return false;
+    S.pumpSlot = -1; balancedLatch = false;
+    if (!silent) note(`You took the pump out. K⁺ keeps leaking out and Na⁺ in, and nothing carries them back, so the gradients will drain and V<sub>m</sub> will fade toward 0. In a real neuron that takes hours; here it is sped up.`);
+    updateStatic(); return true;
+  }
+  let idx = slotWanted != null ? S.chans.findIndex(c => c.slot === slotWanted) : -1;
+  if (idx < 0) { idx = S.chans.findIndex(c => c.type === type && !c.open); if (idx < 0) { for (let i = S.chans.length - 1; i >= 0; i--) if (S.chans[i].type === type) { idx = i; break; } } }
+  if (idx < 0) return false;
+  S.chans.splice(idx, 1); balancedLatch = false;
+  const n = nOpen(type), target = steadyVm();
+  if (!silent) note(n === 0
+    ? `You removed the last ${sym(type)} channel. ${sym(type)} has no vote now, so V<sub>m</sub> will settle where the remaining pulls balance, near ${fmtSigned(target, 0)} mV.`
+    : `You removed a ${sym(type)} channel: ${sym(type)} is down to ${plural(n, 'vote')}, so V<sub>m</sub> will settle a little farther from ${Esub(type)}, near ${fmtSigned(target, 0)} mV.`);
+  updateStatic(); return true;
+}
+function toggleChannel(ch) {
+  ch.open = !ch.open; balancedLatch = false;
+  const n = nOpen(ch.type), target = steadyVm();
+  note(ch.open ? `You reopened a ${sym(ch.type)} channel: ${sym(ch.type)} has ${plural(n, 'vote')} again, so V<sub>m</sub> heads back toward ${fmtSigned(target, 0)} mV.`
+               : `You closed a ${sym(ch.type)} channel. A closed channel casts no vote, so ${sym(ch.type)} is down to ${plural(n, 'vote')} and V<sub>m</sub> will settle near ${fmtSigned(target, 0)} mV.`);
+  updateStatic();
+}
+function setPump(on) {
+  S.pump = on; balancedLatch = false;
+  if (on && S.pumpSlot < 0) { const s = firstFreeSlot(); if (s >= 0) S.pumpSlot = s; }
+  note(on ? `Pump on: it carries 3 Na⁺ out and 2 K⁺ in per ATP, restoring the gradients and adding a few mV of its own.`
+          : `Pump off. K⁺ keeps leaking out and Na⁺ keeps leaking in, and nothing carries them back, so the gradients will drain and V<sub>m</sub> will fade toward 0. In a real neuron that takes hours; here it is sped up.`);
+  updateStatic();
+}
+$$('.step').forEach(row => $$('.sb', row).forEach(b => b.addEventListener('click', () => {
+  const t = row.dataset.type, d = +b.dataset.d;
+  if (d > 0) addChannel(t); else removeChannel(t);
+})));
+function seg(id, attr, fn) {
+  const el = $(id);
+  el.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    $$('button', el).forEach(x => x.setAttribute('aria-checked', x === b ? 'true' : 'false'));
+    fn(b.dataset[attr]);
+  });
+}
+seg('#pumpSeg', 'pump', v => setPump(v === '1'));
+seg('#speedSeg', 'speed', v => { S.speed = parseFloat(v); });
+
+/* ---------- concentrations, temperature, voltage ---------- */
+function setKout(v) {
+  const old = E('K'); S.conc.K.out = clamp(v, 0.5, 200); balancedLatch = false;
+  note(`You set outside K⁺ to ${fmtCshort(S.conc.K.out)} mM: ${Esub('K')} moved from ${fmtSigned(old, 0)} to ${fmtSigned(E('K'), 0)} mV. K⁺ has most of the votes, so V<sub>m</sub> will follow it, settling near ${fmtSigned(steadyVm(), 0)} mV.`);
+  updateStatic();
+}
+$('#rKout').addEventListener('input', e => setKout(+e.target.value));
+$('#nKout').addEventListener('change', e => { const v = parseFloat(e.target.value); if (v > 0) setKout(v); else updateStatic(); });
+for (const k of KEYS) for (const side of ['in', 'out']) $('#c' + k + side).addEventListener('change', e => {
+  const v = parseFloat(e.target.value); if (!(v > 0)) { updateStatic(); return; }
+  S.conc[k][side] = clamp(v, 0.5, 500); balancedLatch = false;
+  note(`You changed ${side === 'in' ? 'inside' : 'outside'} ${sym(k)}: ${Esub(k)} is now ${fmtSigned(E(k), 1)} mV, so V<sub>m</sub> will settle near ${fmtSigned(steadyVm(), 0)} mV.`);
+  updateStatic();
+});
+$('#typical').addEventListener('click', () => { for (const k of KEYS) { S.conc[k].in = IONS[k].cin; S.conc[k].out = IONS[k].cout; } balancedLatch = false; updateStatic(); });
+$('#rTemp').addEventListener('input', e => { S.tempC = +e.target.value; updateStatic(); });
+function setVmByHand(v) {
+  S.Vm = clamp(v, -150, 150); if (S.mode === 'clamp') S.clampV = S.Vm;
+  balancedLatch = false; holdUntil = performance.now() + 500;
+  if (S.mode === 'free') {
+    const I = currents(), target = steadyVm();
+    note(Math.abs(I.sum) < 0.6
+      ? `You set V<sub>m</sub> to ${fmtSigned(S.Vm, 0)} mV, right where the pulls balance, so nothing changes on net.`
+      : `You set V<sub>m</sub> to ${fmtSigned(S.Vm, 0)} mV. The pulls no longer balance: ${I.sum > 0 ? 'the down-pulls win' : 'the up-pulls win'}, so ${I.K > Math.abs(I.Na) ? 'K⁺ leaking out' : 'Na⁺ leaking in'} will carry it back toward ${fmtSigned(target, 0)} mV. ${S.playing ? 'Watch it drift back.' : 'Press <b>Play</b> to watch, or <b>Hold</b> to keep it there.'}`);
+  }
+  pushTrace(); updateUI();
+}
+$('#rVm').addEventListener('input', e => setVmByHand(+e.target.value));
+$('#holdBtn').addEventListener('click', () => {
+  const hold = S.mode !== 'clamp';
+  S.mode = hold ? 'clamp' : 'free'; S.clampV = S.Vm; balancedLatch = false; handNote = null;
+  pushTrace(); updateStatic();
+});
+$('#play').addEventListener('click', () => setPlaying(!S.playing));
+$('#next').addEventListener('click', nextIon);
+$('#reset').addEventListener('click', reset);
+let spaceGuard = false;                        // shortcuts work even after a button was clicked; only typing fields are left alone
+const typing = el => { const t = (el && el.tagName || '').toLowerCase(); return t === 'textarea' || t === 'select' || (t === 'input' && !['range', 'button', 'checkbox', 'radio'].includes(el.type)) || !!(el && el.isContentEditable); };
+window.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey || typing(e.target)) return;
+  const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  if (k === ' ') { e.preventDefault(); spaceGuard = true; if (!e.repeat) setPlaying(!S.playing); }
+  else if (k === 'c' || k === 'n') { e.preventDefault(); nextIon(); }
+  else if (k === 'r') { e.preventDefault(); reset(); }
+});
+window.addEventListener('keyup', e => { if (e.key === ' ' && spaceGuard) { e.preventDefault(); spaceGuard = false; } });
+
+/* ---------- hands on: drag ions through their own channels, drag channels in and out, click to gate ---------- */
+const toLogical = e => { const r = stage.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H }; };
+function findDot(p, radius) {
+  let best = null, bd = radius;
+  for (const side of ['in', 'out']) for (const d of bulk[side]) {
+    if (d.state !== 'in') continue;
+    const dd = Math.hypot(d.x - p.x, d.y - p.y); if (dd < bd) { bd = dd; best = { d, side }; }
+  }
+  return best;
+}
+function slotHit(p) {
+  if (p.x < mL - 8 || p.x > mR + 8 || p.y < LANE) return -1;
+  for (let k = 0; k < NSLOT; k++) if (Math.abs(p.y - slotY(k)) <= 11.5) return k;
+  return -1;
+}
+function moveDrag(p) {
+  let x = clamp(p.x, 8, W - 8), y = clamp(p.y, REG.in.y0, REG.in.y1);
+  const inBand = x > mL - 9 && x < mR + 9;
+  drag.note = null;
+  if (inBand) {
+    let best = null, bd = 14;
+    for (const c of S.chans) { if (c.type !== drag.ion || !c.open) continue; const d = Math.abs(y - slotY(c.slot)); if (d < bd) { bd = d; best = c; } }
+    if (best) { y = slotY(best.slot); drag.pore = best.slot; }
+    else {
+      const k = slotHit({ x: mx, y }), ch = k >= 0 ? chanAt(k) : null;
+      drag.note = k === S.pumpSlot ? 'the pump only carries Na⁺ out and K⁺ in' : ch ? (ch.open ? `a ${sym(ch.type)} channel will not pass ${sym(drag.ion)}` : `that ${sym(ch.type)} channel is closed`) : `only a ${sym(drag.ion)} channel lets ${sym(drag.ion)} through`;
+      x = drag.side === 'in' ? Math.min(x, mL - 9) : Math.max(x, mR + 9);   // pressed against the membrane
+    }
+  }
+  const wantSide = x < mx ? 'in' : 'out';
+  if (wantSide !== drag.side && !(inBand && drag.pore != null && Math.abs(y - slotY(drag.pore)) < 1)) x = drag.side === 'in' ? Math.min(x, mL - 9) : Math.max(x, mR + 9);
+  drag.x = x; drag.y = y; drag.side = x < mx ? 'in' : 'out';
+  if (!inBand) drag.pore = null;
+}
+function dropDrag() {
+  const d = drag; drag = null; stage.style.cursor = '';
+  const side = d.x < mx ? 'in' : 'out', r = REG[side];
+  const x = clamp(d.x > mL - 9 && d.x < mR + 9 ? (side === 'in' ? mL - 16 : mR + 16) : d.x, r.x0, r.x1);
+  bulk[side].push({ ion: d.ion, x, y: clamp(d.y, r.y0, r.y1), vx: 0, vy: 0, state: 'in', drift: 0 });
+  if (side !== d.from) {
+    const outward = side === 'out', z = IONS[d.ion].z;
+    if (S.mode === 'free') S.Vm += -S_MV * z * (outward ? 1 : -1);
+    note(`You carried one ${sym(d.ion)} ${outward ? 'out' : 'in'} through a ${sym(d.ion)} channel. One ion shifts V<sub>m</sub> by only ${(S_MV * Math.abs(z)).toFixed(2)} mV here; the resting potential is a balance of many crossings a second, and the traffic will absorb yours.`);
+    pushTrace(); updateUI();
+  }
+}
+stage.addEventListener('pointerdown', e => {
+  const p = toLogical(e);
+  const hit = findDot(p, e.pointerType === 'touch' ? 24 : 14);
+  if (hit) {
+    const arr = bulk[hit.side]; arr.splice(arr.indexOf(hit.d), 1);
+    drag = { ion: hit.d.ion, x: hit.d.x, y: hit.d.y, from: hit.side, side: hit.side, pore: null, note: null };
+    try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+    stage.style.cursor = 'grabbing'; e.preventDefault(); return;
+  }
+  const k = slotHit(p);
+  if (k >= 0 && (k === S.pumpSlot || chanAt(k))) {
+    chanDrag = { slot: k, type: k === S.pumpSlot ? 'pump' : chanAt(k).type, x: p.x, y: p.y, sx: p.x, sy: p.y, moved: false };
+    try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+    e.preventDefault();
+  }
+});
+stage.addEventListener('pointermove', e => {
+  const p = toLogical(e);
+  if (drag) { moveDrag(p); return; }
+  if (chanDrag) { chanDrag.x = p.x; chanDrag.y = p.y; if (Math.hypot(p.x - chanDrag.sx, p.y - chanDrag.sy) > 5) chanDrag.moved = true; return; }
+  const k = slotHit(p);
+  stage.style.cursor = findDot(p, 14) ? 'grab' : (k >= 0 && (k === S.pumpSlot || chanAt(k))) ? 'pointer' : '';
+});
+function endChanDrag() {
+  const cd = chanDrag; chanDrag = null; stage.style.cursor = '';
+  if (!cd.moved) { if (cd.type === 'pump') setPump(!S.pump); else toggleChannel(chanAt(cd.slot)); return; }
+  const inBand = cd.x > mL - 40 && cd.x < mR + 40 && cd.y > LANE;
+  if (!inBand) { removeChannel(cd.type, cd.slot); return; }
+  const target = firstFreeSlot(cd.y);
+  if (target >= 0 && Math.abs(slotY(target) - cd.y) < Math.abs(slotY(cd.slot) - cd.y)) {
+    if (cd.type === 'pump') S.pumpSlot = target; else chanAt(cd.slot).slot = target;
+  }
+  updateUI();
+}
+stage.addEventListener('pointerup', () => { if (drag) dropDrag(); else if (chanDrag) endChanDrag(); });
+stage.addEventListener('pointercancel', () => { if (drag) dropDrag(); else if (chanDrag) endChanDrag(); });
+
+const ghost = $('#ghost');
+$$('.chip').forEach(chip => chip.addEventListener('pointerdown', e => {
+  trayDrag = { type: chip.dataset.add, sx: e.clientX, sy: e.clientY, moved: false, label: chip.textContent.trim() };
+  ghost.textContent = trayDrag.label; ghost.style.display = 'none';
+  try { chip.setPointerCapture(e.pointerId); } catch (_) {}
+  e.preventDefault();
+}));
+window.addEventListener('pointermove', e => {
+  if (!trayDrag) return;
+  if (Math.hypot(e.clientX - trayDrag.sx, e.clientY - trayDrag.sy) > 5) trayDrag.moved = true;
+  if (trayDrag.moved) { ghost.style.display = 'block'; ghost.style.left = e.clientX + 'px'; ghost.style.top = e.clientY + 'px'; }
+});
+window.addEventListener('pointerup', e => {
+  if (!trayDrag) return;
+  const td = trayDrag; trayDrag = null; ghost.style.display = 'none';
+  if (!td.moved) { addChannel(td.type); return; }
+  const p = toLogical(e);
+  if (p.x > mL - 40 && p.x < mR + 40 && p.y > LANE && p.y < H) addChannel(td.type, p.y);
+});
+window.addEventListener('pointercancel', () => { trayDrag = null; ghost.style.display = 'none'; });
+
+/* ---------- simple view ---------- */
+const viewBtn = $('#viewToggle');
+function setView(simple) {
+  document.body.classList.toggle('simple', simple);
+  viewBtn.textContent = simple ? 'Show more' : 'Show fewer';
+  try { localStorage.setItem('rp-view', simple ? 'simple' : 'full'); } catch (_) {}
+  fitStage(); fitTrace();
+}
+viewBtn.addEventListener('click', () => setView(!document.body.classList.contains('simple')));
+let startSimple = true; try { startSimple = localStorage.getItem('rp-view') !== 'full'; } catch (_) {}
+setView(startSimple);
+
+/* ---------- theme & resize ---------- */
+new ResizeObserver(() => { fitStage(); fitTrace(); }).observe($('.wrap'));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readTokens);
+new MutationObserver(readTokens).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { fitStage(); fitTrace(); });
+
+/* ---------- main loop ---------- */
+let last = performance.now(), lastUI = 0, tokenTick = 0;
+function frame(now) {
+  const dtReal = clamp((now - last) / 1000, 0, 0.05); last = now;
+  if (S.playing && dtReal > 0) { const dtSim = dtReal * S.speed; stepSim(dtSim); S.simTime += dtSim; pushTrace(); }
+  updateDots(dtReal); updateTransit(dtReal); reconcile(dtReal);
+  if (++tokenTick % 30 === 0) readTokens();
+  drawStage(); drawTrace();
+  if (now - lastUI > 100) { updateUI(); lastUI = now; }
+  requestAnimationFrame(frame);
+}
+fitStage(); fitTrace(); readTokens(); reset();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

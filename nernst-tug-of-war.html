@@ -123,6 +123,7 @@ input[type=number]{font:inherit; font-size:13px; padding:5px 7px; border:1px sol
 .btn.primary{background:var(--on); color:var(--on-text); border-color:var(--on); min-width:88px}
 .btn.primary:hover{opacity:.9}
 .btn.link{border:0; padding:0; background:none; color:var(--ink-2); font-weight:400; font-size:13px; text-decoration:underline; text-underline-offset:3px}
+.link{color:var(--ink-2)}
 button:focus-visible, input:focus-visible, [tabindex]:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
 .keys{font-size:12px; color:var(--muted)}
 .keys kbd{font-family:inherit; border:1px solid var(--line); border-bottom-width:2px; border-radius:4px; padding:0 5px; font-size:11px}
@@ -207,31 +208,106 @@ footer p{margin:0 0 6px}
 .gloss dt{font-weight:700}
 .gloss dd{margin:0; color:var(--ink-2)}
 @media (prefers-reduced-motion:reduce){.bar, .frow .fb i{transition:none}}
+/* series navigation */
+.series{display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 16px; font-size:13px}
+.series .brand{font-size:11px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--muted)}
+.series a{color:var(--ink-2); text-decoration:none; border-bottom:2px solid transparent; padding-bottom:1px}
+.series a:hover{border-bottom-color:var(--line)}
+.series a[aria-current="page"]{color:var(--ink); font-weight:700; border-bottom-color:var(--ion)}
+.hdr-right{display:flex; align-items:center; gap:14px 18px; flex-wrap:wrap}
+/* narrator: a headline you can read from the back, detail underneath */
+.narr .nk{display:block; margin-bottom:2px}
+.narr .nh{display:block; font-size:15.5px; line-height:1.35; color:var(--ink)}
+.narr .nd{display:block; font-size:13.5px; line-height:1.45; color:var(--ink-2); margin-top:3px}
+.narr{min-height:7.6em}
+/* quick controls under the picture on narrow screens */
+.mbar{display:none; gap:8px}
+.mbar .btn{flex:1; padding:9px 8px}
+/* challenges */
+.challenges{padding:0 16px 12px}
+.challenges > .hd{padding:12px 0 8px}
+.chl{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+.chl li{display:grid; grid-template-columns:22px 1fr; gap:8px; font-size:13.5px; line-height:1.4}
+.chl .mk{width:18px; height:18px; border-radius:50%; border:2px solid var(--line); margin-top:1px; display:grid; place-items:center; font-size:11px; font-weight:700; color:var(--on-text)}
+.chl li.done .mk{background:var(--on); border-color:var(--on)}
+.chl b{display:block; color:var(--ink)}
+.chl span{color:var(--ink-2)}
+.chl li.done .why{color:var(--ink)}
+.chl li.new{animation:chflash 1.2s ease-out}
+@keyframes chflash{from{background:var(--ctrl)}to{background:transparent}}
+.chfoot{margin-top:10px}
+.linkout{font-size:12px; width:100%}
+/* one column: picture first, then what it means, then the controls */
+@media (max-width:900px){
+  .mbar{display:flex}
+  .col{display:contents}
+  .card.stage{order:1} .card.metercard{order:2} .card.tracecard{order:3} .card.controls{order:4} .card.readouts{order:5} .card.challenges{order:6} .card.flux{order:7}
+}
+@media (max-width:600px){
+  .wrap{padding:14px 10px 40px; gap:14px}
+  .stage{padding:8px 8px 10px}
+  h1{font-size:23px}
+  .narr{min-height:9em}
+  .hdr-right{display:none}
+}
+/* present mode: one screen, big type, nothing to scroll */
+body.present{overflow:hidden}
+body.present .wrap{max-width:none; height:100vh; height:100dvh; padding:10px 14px; gap:10px; grid-template-rows:auto minmax(0,1fr); overflow:hidden}
+body.present .series, body.present header.top .sub, body.present .legend, body.present .row3, body.present .row4, body.present footer,
+body.present .flux, body.present .challenges, body.present .mbar, body.present .ro .hint, body.present .ro .note, body.present .mfoot,
+body.present .viewrow, body.present .controls .keys, body.present .controls .adv, body.present .ro.adv, body.present .mrow.adv{display:none !important}
+body.present h1{font-size:22px}
+body.present header.top{align-items:center}
+body.present .dash{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr); grid-template-rows:auto auto minmax(0,1fr) auto; grid-template-areas:"stage readouts" "stage meter" "stage trace" "controls controls"; align-items:stretch; gap:12px; min-height:0}
+body.present .col{display:contents}
+body.present .card.stage{grid-area:stage; align-content:start}
+body.present .card.readouts{grid-area:readouts; grid-template-columns:1fr 1fr}
+body.present .card.readouts .ro{border-top:0}
+body.present .card.readouts .ro + .ro{border-left:1px solid var(--line-2)}
+body.present .card.metercard{grid-area:meter}
+body.present .card.tracecard{grid-area:trace; display:flex; flex-direction:column; min-height:0}
+body.present .tracewrap{flex:1; min-height:0}
+body.present canvas#trace{height:100%}
+body.present .card.controls{grid-area:controls; display:flex; flex-wrap:wrap; align-items:flex-end; gap:0 4px; padding:2px 6px}
+body.present .controls .group{border-top:0; padding:6px 10px; min-width:0}
+body.present canvas#stage{width:min(100%, calc(var(--stage-max-h, 60vh) * var(--stage-ar, 1.4545))); margin:0 auto}
+body.present .meter .mhd, body.present .ticks, body.present .narr .nk, body.present .controls .group > .lab{display:none !important}
+body.present .narr{min-height:0; height:118px; overflow:hidden}
+body.present .narr .nh{font-size:21px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+body.present .narr .nd{font-size:15.5px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+body.present .ro .big{font-size:36px}
+body.present .mrow .rowhd{font-size:15px}
+body.present .track{height:16px}
 </style>
 </head>
 <body>
 <div class="wrap">
+  <nav class="series" aria-label="NeuroSim demos"><span class="brand">NeuroSim</span><a href="https://torryscott.github.io/NeuroSim/nernst-tug-of-war.html" aria-current="page">1 · Nernst</a><a href="https://torryscott.github.io/NeuroSim/resting-potential.html">2 · Resting potential</a><a href="https://torryscott.github.io/NeuroSim/action-potential.html">3 · Action potential</a></nav>
   <header class="top">
     <div>
       <h1>Nernst Tug-of-War</h1>
       <p class="sub">One ion, one selective channel, two opposing pushes. Watch ions cross until the membrane voltage settles where the pushes cancel. That settling voltage is the equilibrium potential.</p>
     </div>
-    <div class="legend" aria-label="Legend">
-      <span><i class="ionsw"></i> <span id="legendIon">K⁺ ions</span></span>
-      <span><i class="dash"></i> diffusion push</span>
-      <span><i></i> electrical push</span>
-      <span><i class="net"></i> net push on the ion</span>
+    <div class="hdr-right">
+      <div class="legend" aria-label="Legend">
+        <span><i class="ionsw"></i> <span id="legendIon">K⁺ ions</span></span>
+        <span><i class="dash"></i> diffusion push</span>
+        <span><i></i> electrical push</span>
+        <span><i class="net"></i> net push on the ion</span>
+      </div>
+      <button class="btn" id="presentBtn" title="One-screen layout with big type, for projecting. Shortcut: P">Present</button>
     </div>
   </header>
 
   <section class="dash">
     <div class="col left">
       <div class="card stage">
-        <canvas id="stage" role="img" aria-label="Membrane with a selective channel. Ions jiggle on both sides and cross through the pore; unbalanced charge lines the membrane faces; arrows show the diffusion push, the electrical push, and the net push on the ion."></canvas>
-        <p class="narr" id="narr" aria-live="off"><span class="nk">What is happening</span><span id="narrText"></span></p>
+        <canvas id="stage" role="img" aria-label="Membrane with a selective channel. Ions jiggle on both sides and cross through the pore; unbalanced charge lines the membrane faces; arrows show the diffusion push, the electrical push, and the net push on the ion. Ringed ions are the ones that have crossed."></canvas>
+        <div class="mbar" aria-label="Quick controls"><button class="btn primary" id="mPlay">Play</button><button class="btn" id="mNext">Let one cross</button><button class="btn" id="mReset">Reset</button></div>
+        <p class="narr" id="narr" aria-live="off"><span class="nk">What is happening</span><b class="nh" id="narrHead"></b><span class="nd" id="narrText"></span></p>
       </div>
       <div class="card tracecard">
-        <div class="hd"><h2>Membrane voltage over time</h2><span class="hint">solid line V<sub>m</sub> · dashed line E<sub>ion</sub> · last 30 s</span></div>
+        <div class="hd"><h2>Membrane voltage over time</h2><span class="hint">solid line V<sub>m</sub> · dashed line E<sub>ion</sub> · click the plot to mark your prediction</span></div>
         <div class="tracewrap"><canvas id="trace" role="img" aria-label="Membrane voltage against simulated time, with the Nernst equilibrium potential as a dashed reference line."></canvas><div class="tip mono" id="tip"></div></div>
       </div>
     </div>
@@ -267,7 +343,7 @@ footer p{margin:0 0 6px}
           <input type="range" id="rTemp" min="0" max="45" step="1" value="37" aria-label="Temperature in degrees Celsius">
         </div>
         <div class="group adv">
-          <div class="lab"><b>Each crossing ion shifts V<sub>m</sub> by</b></div>
+          <div class="lab"><b id="stepLbl">Each K⁺ that crosses shifts V<sub>m</sub> by</b></div>
           <div class="seg" role="radiogroup" aria-label="Voltage change per ion" id="stepSeg">
             <button role="radio" aria-checked="false" data-step="6">6 mV</button>
             <button role="radio" aria-checked="true" data-step="3">3 mV</button>
@@ -283,10 +359,15 @@ footer p{margin:0 0 6px}
           </div>
           <div class="hint" id="tinyHint">real cell: the gradient is far too big for these crossings to dent</div>
         </div>
+        <div class="group adv">
+          <div class="lab"><b>Share this setup</b><span>for an assignment or a slide</span></div>
+          <button class="btn" id="copyLink">Copy a link to this setup</button>
+          <input class="mono linkout" id="linkOut" readonly hidden aria-label="Link to this setup">
+        </div>
         <div class="group">
           <div class="btnrow">
             <button class="btn primary" id="play">Play</button>
-            <button class="btn" id="next">Next ion</button>
+            <button class="btn" id="next">Let one cross</button>
             <button class="btn" id="reset">Reset</button>
           </div>
           <div class="crow2 adv"><b>Speed</b>
@@ -297,7 +378,7 @@ footer p{margin:0 0 6px}
               <button role="radio" aria-checked="false" data-speed="4">4×</button>
             </div>
           </div>
-          <div class="keys"><kbd>space</kbd> play / pause &nbsp; <kbd>N</kbd> next ion &nbsp; <kbd>R</kbd> reset</div>
+          <div class="keys"><kbd>space</kbd> play / pause &nbsp; <kbd>C</kbd> let one cross &nbsp; <kbd>R</kbd> reset &nbsp; <kbd>P</kbd> present</div>
         </div>
       </div>
     </div>
@@ -324,6 +405,11 @@ footer p{margin:0 0 6px}
           <div class="ticks mono" id="ticks"><span class="l">150</span><span style="left:25%">75</span><span style="left:50%">0</span><span style="left:75%">75</span><span class="r">150</span></div>
           <p class="mfoot adv" id="mfoot"></p>
         </div>
+      </div>
+      <div class="card challenges">
+        <div class="hd"><h2>Challenges</h2><span class="hint" id="chScore">0 of 5 done</span></div>
+        <ol class="chl" id="chList"></ol>
+        <div class="chfoot"><button class="btn link" id="chReset">Start the challenges over</button></div>
       </div>
       <div class="card flux adv">
         <div class="hd"><h2>Ion traffic</h2><span class="hint">crossings per second</span></div>
@@ -383,7 +469,7 @@ footer p{margin:0 0 6px}
       <div class="hd"><h2>Try this in class</h2></div>
       <p class="hint" style="margin:0 0 8px">Items 7 to 9 use the extra controls behind “Show more”.</p>
       <ol>
-        <li>Before pressing Play, click <b>Next ion</b> five times. Which arrow grew? Which stayed put? Why?</li>
+        <li>Before pressing Play, click <b>Let one cross</b> five times. Which arrow grew? Which stayed put? Why?</li>
         <li>Raise outside K⁺ from 5 to 10 mM (hyperkalemia). Predict the sign of the shift in E<sub>K</sub> before you look, then watch the membrane re-settle.</li>
         <li>Make inside and outside equal. What is the electrical push at equilibrium? Where did the “battery” go?</li>
         <li>Switch to Na⁺. Its ratio is about the same size as potassium’s, but flipped. Why does the membrane go positive?</li>
@@ -398,7 +484,7 @@ footer p{margin:0 0 6px}
   </section>
 
   <footer>
-    <p><b>About the model.</b> Crossing rates follow a single-barrier (Eyring) rate model, so the two directions balance exactly at the Nernst potential. V<sub>m</sub> follows the average of many random crossings, so it moves smoothly; <b>Next ion</b> shows the individual random events. The membrane capacitance is cartoon-scaled so that each ion visibly moves V<sub>m</sub>. Concentrations are typical textbook values for a mammalian neuron. The optional tiny-box mode lets the concentrations follow the dots, one dot’s worth per crossing, to show what would happen if the cell really were as small as the picture.</p>
+    <p><b>About the model.</b> Crossing rates follow a single-barrier (Eyring) rate model, so the two directions balance exactly at the Nernst potential. V<sub>m</sub> follows the average of many random crossings, so it moves smoothly; <b>Let one cross</b> shows the individual random events. The membrane capacitance is cartoon-scaled so that each ion visibly moves V<sub>m</sub>. Concentrations are typical textbook values for a mammalian neuron. The optional tiny-box mode lets the concentrations follow the dots, one dot’s worth per crossing, to show what would happen if the cell really were as small as the picture. Both pushes are shown per unit of charge, so they compare directly with the membrane voltage; a Ca²⁺ ion carries two charges and feels twice that energy. Part 1 of the NeuroSim series, followed by <a class="link" href="https://torryscott.github.io/NeuroSim/resting-potential.html">Resting Potential Tug-of-War</a> and <a class="link" href="https://torryscott.github.io/NeuroSim/action-potential.html">Action Potential Tug-of-War</a>.</p>
   </footer>
 </div>
 
@@ -420,33 +506,38 @@ const IONS = {
 };
 
 const S = {
-  ion:'K', cin:140, cout:5, tempC:37, mode:'free', clampV:-70, step:3, speed:1, gate:1, tiny:false,
+  ion:'K', cin:140, cout:5, tempC:37, mode:'free', clampV:-70, step:3, speed:1, gate:1, tiny:false, present:false, guess:null,
   Vm:0, nOut:0, playing:false, simTime:0, countOut:0, countIn:0, rateOut:0, rateIn:0,
   trace:[], diam:20,
 };
 const ion = () => IONS[S.ion];
 const VT = () => 1000 * R * (273.15 + S.tempC) / F;               // mV
 const dotMM = () => Math.max(S.cin, S.cout) / MAX_DOTS;              // mM represented by one dot on screen
-const netOut = () => -S.Vm / (S.step * ion().z);                      // net ions that have crossed outward, read from the charge
+let nIons = 0;                                                        // net ions moved outward since reset, by traffic or by hand; the Vm slider moves charge, not ions
 const conc = () => {                                                  // the concentrations the physics uses
   if (!S.tiny) return { cin: S.cin, cout: S.cout };                   // real cell: the gradient is far too big to dent
-  const n = netOut(), d = dotMM();                                    // tiny box: every crossing moves one dot's worth
-  return { cin: Math.max(0.001, S.cin - n * d), cout: Math.max(0.001, S.cout + n * d) };
+  const d = dotMM();                                                  // tiny box: every ion that crosses moves one dot's worth
+  return { cin: Math.max(1e-7, S.cin - nIons * d), cout: Math.max(1e-7, S.cout + nIons * d) };
 };
 const Eion = () => { const c = conc(); return VT() / ion().z * Math.log(c.cout / c.cin); };   // mV
 const Ebase = () => VT() / ion().z * Math.log(S.cout / S.cin);        // the real cell's E, from the slider concentrations
 function tinyEquilibrium() {                                          // where the pushes meet when the concentrations follow the dots
   const z = ion().z, vt = VT(), d = dotMM();
-  const f = V => { const n = -V / (S.step * z); const ci = Math.max(1e-3, S.cin - n * d), co = Math.max(1e-3, S.cout + n * d); return vt * Math.log(ci / co) + z * V; };
+  const f = V => { const n = -V / (S.step * z); const ci = Math.max(1e-7, S.cin - n * d), co = Math.max(1e-7, S.cout + n * d); return vt * Math.log(ci / co) + z * V; };
   let lo = -300, hi = 300; if (f(lo) * f(hi) > 0) return Eion();
   for (let i = 0; i < 60; i++) { const mid = (lo + hi) / 2; if (f(lo) * f(mid) <= 0) hi = mid; else lo = mid; }
   return (lo + hi) / 2;
 }
-const forces = () => {                                                // outward push on the ion, mV-equivalent
-  const c = conc(), chem = VT() * Math.log(c.cin / c.cout);
-  const elec = ion().z * S.Vm;
+const forces = () => {                                                // push on the ion per unit of its charge, in mV; positive means outward
+  const c = conc(), z = ion().z, chem = VT() / Math.abs(z) * Math.log(c.cin / c.cout);
+  const elec = Math.sign(z) * S.Vm;                                   // per charge, so both compare directly with Vm; net = sign(z)·(Vm − E)
   return { chem, elec, net: chem + elec };
 };
+function realFraction() {                                             // in a real cell, the fraction of the ion that crosses to charge the membrane
+  const z = Math.abs(ion().z), d = S.diam, A = Math.PI * d * d * 1e-8, C = 1e-6 * A, V = Math.PI * d * d * d / 6 * 1e-15;
+  const n = C * Math.abs(Ebase()) / 1000 / QE / z, inside = S.cin * 1e-3 * V * NA;
+  return inside > 0 ? n / inside : null;
+}
 const rates = () => {                                                 // crossings per simulated second
   const z = ion().z, vt = VT(), cref = Math.max(S.cin, S.cout), c = conc();
   const a = clamp(z * S.Vm / (2 * vt), -14, 14);
@@ -489,19 +580,46 @@ const hexToRgba = (hex, a) => {
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- stage geometry ---------- */
-const W = 640, H = 440, mL = 296, mR = 344, mx = 320, cy = 286, pg = 8, chH = 36;
-const REG = {
-  in:  { x0: 14, x1: mL - 12, y0: 140, y1: H - 16 },
-  out: { x0: mR + 12, x1: W - 14, y0: 140, y1: H - 16 },
-};
-const MOUTH = { in: { x: mL - 13, y: cy }, out: { x: mR + 13, y: cy } };
+let W = 640, mL = 296, mR = 344, mx = 320, NARROW = false;           // the picture gets narrower, and its type bigger, on phones
+const H = 440, cy = 286, pg = 8, chH = 36;
+let REG = null, MOUTH = null;
 const bulk = { in: [], out: [] };            // the crowd on each side
 const transit = [];
 let drag = null;                             // an ion being dragged by hand
 let nCharge = 0;                             // net ions crossed outward, counted as each one passes the pore: the charge marks
 let nAhead = 0;                              // crossings launched but not yet through the pore (signed)
 let nMoved = 0;                              // net ions that have physically moved from one crowd to the other (signed)
-const CROWD_R = 5.5, MAX_DOTS = 160;
+let CROWD_R = 5.5;
+const MAX_DOTS = 160;
+let nDone = 0, arrivals = 0;                 // net ions that have finished crossing (they wear rings), and an arrival counter
+function applyGeom(narrow) {
+  const old = REG ? { W, mL, mR } : null;
+  W = narrow ? 420 : 640; mL = W / 2 - 24; mR = W / 2 + 24; mx = W / 2; NARROW = narrow; CROWD_R = narrow ? 6.5 : 5.5;
+  REG = { in: { x0: 14, x1: mL - 12, y0: 140, y1: H - 16 }, out: { x0: mR + 12, x1: W - 14, y0: 140, y1: H - 16 } };
+  MOUTH = { in: { x: mL - 13, y: cy }, out: { x: mR + 13, y: cy } };
+  $('#stage').style.aspectRatio = `${W} / ${H}`;
+  document.body.style.setProperty('--stage-ar', (W / H).toFixed(4));
+  if (!old) return;
+  const map = x => x <= old.mL ? x * mL / old.mL : x >= old.mR ? W - (old.W - x) * (W - mR) / (old.W - old.mR) : mL + (x - old.mL) * (mR - mL) / (old.mR - old.mL);
+  for (const side of ['in', 'out']) for (const d of bulk[side]) { d.x = map(d.x); if (d.goal) d.goal.x = map(d.goal.x); }
+  for (const tr of transit) { tr.x = map(tr.x); tr.x0 = map(tr.x0); }
+  if (drag) drag.x = map(drag.x);
+}
+applyGeom(false);
+function syncRings(fresh) {                  // ring exactly |nDone| ions, on the side that gained them: the ones that crossed
+  const want = { out: Math.max(0, nDone), in: Math.max(0, -nDone) };
+  for (const side of ['in', 'out']) {
+    const arr = bulk[side].filter(d => d.state !== 'leaving');
+    let have = arr.reduce((a, d) => a + (d.ring ? 1 : 0), 0);
+    if (have < want[side]) {
+      const cand = arr.filter(d => !d.ring).sort((a, b) => (b === fresh) - (a === fresh) || (b.t || 0) - (a.t || 0));
+      for (const d of cand) { if (have >= want[side]) break; d.ring = true; have++; }
+    } else if (have > want[side]) {
+      const ringed = arr.filter(d => d.ring).sort((a, b) => (a.t || 0) - (b.t || 0));
+      for (const d of ringed) { if (have <= want[side]) break; d.ring = false; have--; }
+    }
+  }
+}
 
 function baseCount(side) {
   const c = side === 'in' ? S.cin : S.cout, cmax = Math.max(S.cin, S.cout);
@@ -518,7 +636,7 @@ function newDot(side, fromEdge) {
 }
 function buildDots() {
   bulk.in.length = 0; bulk.out.length = 0; transit.length = 0;
-  nCharge = 0; nAhead = 0; nMoved = 0;
+  nCharge = 0; nAhead = 0; nMoved = 0; nDone = 0;
   for (const side of ['in', 'out']) for (let i = 0, n = baseCount(side); i < n; i++) bulk[side].push(newDot(side, false));
 }
 let slotYs = null;
@@ -546,7 +664,7 @@ function reconcile() {                       // only a concentration change exch
     else if (diff < 0) {
       const settled = arr.filter(d => d.state === 'in');
       const far = side === 'in' ? d => d.x : d => -d.x;
-      settled.sort((a, b) => far(a) - far(b));
+      settled.sort((a, b) => (a.ring ? 1 : 0) - (b.ring ? 1 : 0) || far(a) - far(b));   // ringed ions stay in view
       for (let i = 0; i < Math.min(2, -diff, settled.length); i++) { settled[i].state = 'leaving'; settled[i].drift = side === 'in' ? -1 : 1; }
     }
   }
@@ -584,7 +702,8 @@ function takeNearest(arr, m, ok) {
 }
 function spawnCrossing(outward, onCross) {   // the settled ion nearest the pore makes the trip and stays on the far side
   const src = outward ? 'in' : 'out', dst = outward ? 'out' : 'in', m = MOUTH[src];
-  let d = takeNearest(bulk[src], m, x => x.state === 'in');
+  let d = takeNearest(bulk[src], m, x => x.state === 'in' && x.ring);   // an ion that crossed earlier is the one that goes back
+  if (!d) d = takeNearest(bulk[src], m, x => x.state === 'in');
   if (!d) d = { x: src === 'in' ? REG.in.x0 + 10 : REG.out.x1 - 10, y: m.y + (Math.random() - 0.5) * 120 };
   nAhead += outward ? 1 : -1; nMoved += outward ? 1 : -1;
   const dur = 0.25 + Math.hypot(d.x - m.x, d.y - m.y) / 220;
@@ -610,8 +729,10 @@ function updateTransit(dt) {
       if (p >= 1) {
         transit.splice(i, 1);
         const rg = REG[tr.dst];
-        bulk[tr.dst].push({ x: md.x, y: cy, vx: tr.outward ? 1 : -1, vy: 0, state: 'in', drift: 0, push: 0,
-          goal: { x: rg.x0 + 20 + Math.random() * (rg.x1 - rg.x0 - 40), y: rg.y0 + 10 + Math.random() * (rg.y1 - rg.y0 - 20) } });
+        const nd = { x: md.x, y: cy, vx: tr.outward ? 1 : -1, vy: 0, state: 'in', drift: 0, push: 0, ring: false, t: ++arrivals,
+          goal: { x: rg.x0 + 20 + Math.random() * (rg.x1 - rg.x0 - 40), y: rg.y0 + 10 + Math.random() * (rg.y1 - rg.y0 - 20) } };
+        bulk[tr.dst].push(nd);
+        nDone += tr.outward ? 1 : -1; syncRings(nd);
       }
     }
   }
@@ -622,6 +743,7 @@ function crossing(outward) {
   const z = ion().z;
   if (S.mode === 'free') { S.nOut += outward ? z : -z; S.Vm = -S.step * S.nOut; }
   if (outward) S.countOut++; else S.countIn++;
+  nIons += outward ? 1 : -1;
 }
 function gauss() { let u = 0, v = 0; while (u === 0) u = Math.random(); while (v === 0) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(TAU * v); }
 function poisson(m) {
@@ -636,8 +758,8 @@ function stepSim(dtSim, dtReal) {
   if (S.mode === 'free' && performance.now() > holdUntil) {   // Vm follows the average net current: smooth, no jitter
     const n = Math.max(1, Math.ceil(dtSim * 60)), h = dtSim / n;
     for (let i = 0; i < n; i++) {
-      const r = rates();
-      S.Vm += clamp(-S.step * z * (r.kOut - r.kIn) * h, -3, 3);
+      const r = rates(), dV = clamp(-S.step * z * (r.kOut - r.kIn) * h, -3, 3);
+      S.Vm += dV; nIons -= dV / (S.step * z);                               // the ions behind that change of charge
     }
     S.nOut = -S.Vm / S.step;
   }
@@ -649,6 +771,7 @@ function stepSim(dtSim, dtReal) {
     const pairs = poisson(Math.min(Math.min(kOut, kIn) * S.speed, 1.2) * dtReal);   // matched hops in both directions leave the charge unchanged
     for (let i = 0; i < pairs; i++) { spawnCrossing(false); spawnCrossing(true); }
   } else {                                                                   // clamp: traffic at the true rates, the clamp absorbs the charge
+    nIons += (kOut - kIn) * dtSim;                                           // but the ions still move
     const p = Math.min(1, 6 / ((kOut + kIn) * S.speed + 1e-9));
     const nO = poisson(kOut * dtSim), nI = poisson(kIn * dtSim);
     for (let i = 0; i < nO; i++) if (Math.random() < p) spawnCrossing(true);
@@ -660,6 +783,7 @@ function pushTrace() {
   while (S.trace.length && S.trace[0].t < S.simTime - 32) S.trace.shift();
 }
 function reset() {
+  nIons = 0; holdUntil = 0;
   S.Vm = S.mode === 'clamp' ? S.clampV : 0;
   S.nOut = -S.Vm / S.step;
   S.countOut = S.countIn = 0; S.rateOut = S.rateIn = 0; S.simTime = 0; S.trace = []; balancedLatch = false;
@@ -669,6 +793,7 @@ function setPlaying(p) {
   S.playing = p;
   $('#play').textContent = p ? 'Pause' : 'Play';
   $('#play').setAttribute('aria-pressed', p ? 'true' : 'false');
+  $('#mPlay').textContent = p ? 'Pause' : 'Play';
 }
 function nextIon() {
   setPlaying(false);
@@ -683,6 +808,8 @@ function nextIon() {
 const stage = $('#stage'), ctx = stage.getContext('2d');
 let stageScale = 1;
 function fitStage() {
+  const narrow = !S.present && (stage.clientWidth || 640) < 540;
+  if (narrow !== NARROW) applyGeom(narrow);
   const cssW = stage.clientWidth || 640, dpr = window.devicePixelRatio || 1;
   stageScale = cssW / W;
   stage.width = Math.round(W * stageScale * dpr); stage.height = Math.round(H * stageScale * dpr);
@@ -691,8 +818,10 @@ function fitStage() {
 const FONT_UI = '"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif';
 const FONT_MONO = '"IBM Plex Mono", ui-monospace, Menlo, monospace';
 
+const labelScale = () => S.present ? 1.2 : NARROW ? 1.25 : 1;
 function haloText(c, text, x, y, font, color, align = 'center', baseline = 'middle') {
-  c.font = font; c.textAlign = align; c.textBaseline = baseline;
+  const k = labelScale();
+  c.font = k === 1 ? font : font.replace(/(\d+(?:\.\d+)?)px/, (m, n) => (n * k).toFixed(1) + 'px'); c.textAlign = align; c.textBaseline = baseline;
   c.lineJoin = 'round'; c.lineWidth = 4; c.strokeStyle = T.stage; c.strokeText(text, x, y);
   c.fillStyle = color; c.fillText(text, x, y);
 }
@@ -730,7 +859,7 @@ function drawIonDot(c, x, y, r, alpha) {
   c.globalAlpha = 1;
 }
 function forceArrow(c, y, value, label, dash) {
-  const len = Math.abs(value) < 1 ? 0 : Math.max(10, Math.min(258, Math.abs(value) * 0.95));
+  const len = Math.abs(value) < 1 ? 0 : Math.max(10, Math.min(258, W / 2 - 40, Math.abs(value) * 0.95));
   const txt = `${label} · ${Math.abs(value).toFixed(0)} mV`;
   if (len === 0) { drawZero(c, mx, y, T.ink); haloText(c, txt, mx + 14, y, `700 12px ${FONT_UI}`, T.ink2, 'left'); return; }
   const dir = value > 0 ? 1 : -1, x1 = mx + dir * len;
@@ -760,7 +889,10 @@ function drawStage() {
   rr(mL - 5, cy + pg, mR - mL + 10, chH - pg, 6); c.fill(); c.stroke();
 
   // crowds, the unpaired charge marks on both faces, and ions in transit
-  for (const side of ['in', 'out']) for (const d of bulk[side]) drawIonDot(c, d.x, d.y, CROWD_R, 1);
+  for (const side of ['in', 'out']) for (const d of bulk[side]) {
+    drawIonDot(c, d.x, d.y, CROWD_R, 1);
+    if (d.ring) { c.strokeStyle = T.ink; c.globalAlpha = 0.8; c.lineWidth = 1.4; c.beginPath(); c.arc(d.x, d.y, CROWD_R + 2.4, 0, TAU); c.stroke(); c.globalAlpha = 1; }
+  }
   if (nCharge !== 0) {
     const inSign = ((nCharge > 0) === (ion().z > 0)) ? MINUS : '+', outSign = inSign === '+' ? MINUS : '+', nShow = Math.min(Math.abs(nCharge), slotList().length);
     c.fillStyle = T.ink2; c.font = `700 11px ${FONT_MONO}`; c.textAlign = 'center'; c.textBaseline = 'middle';
@@ -770,7 +902,7 @@ function drawStage() {
   }
   for (const tr of transit) {
     drawIonDot(c, tr.x, tr.y, CROWD_R, 1);
-    c.strokeStyle = T.ink; c.lineWidth = 1.5; c.beginPath(); c.arc(tr.x, tr.y, 9.5, 0, TAU); c.stroke();
+    c.strokeStyle = T.ink; c.lineWidth = 1.5; c.beginPath(); c.arc(tr.x, tr.y, CROWD_R + 4, 0, TAU); c.stroke();
   }
 
   // reservoir fades
@@ -810,18 +942,29 @@ function drawStage() {
   }
 
   // labels
-  haloText(c, 'INSIDE · cytosol', 16, 24, `700 12px ${FONT_UI}`, T.ink2, 'left');
-  haloText(c, 'OUTSIDE · extracellular', W - 16, 24, `700 12px ${FONT_UI}`, T.ink2, 'right');
-  const cc = conc();
-  haloText(c, `[${ion().sym}] ${fmtCshort(cc.cin)} mM`, 16, 45, `600 15px ${FONT_MONO}`, T.ink, 'left');
-  haloText(c, `[${ion().sym}] ${fmtCshort(cc.cout)} mM`, W - 16, 45, `600 15px ${FONT_MONO}`, T.ink, 'right');
-  if (S.tiny) haloText(c, 'tiny closed box · the concentrations follow the dots', mx, 54, `700 10px ${FONT_UI}`, T.muted);
+  haloText(c, NARROW ? 'INSIDE' : 'INSIDE · cytosol', 16, 24, `700 12px ${FONT_UI}`, T.ink2, 'left');
+  haloText(c, NARROW ? 'OUTSIDE' : 'OUTSIDE · extracellular', W - 16, 24, `700 12px ${FONT_UI}`, T.ink2, 'right');
+  const cc = conc(), cl = v => NARROW ? `${fmtCshort(v)} mM` : `[${ion().sym}] ${fmtCshort(v)} mM`;
+  haloText(c, cl(cc.cin), 16, 45, `600 15px ${FONT_MONO}`, T.ink, 'left');
+  haloText(c, cl(cc.cout), W - 16, 45, `600 15px ${FONT_MONO}`, T.ink, 'right');
+  if (S.tiny) haloText(c, NARROW ? 'tiny box' : 'tiny closed box · the concentrations follow the dots', mx, 54, `700 10px ${FONT_UI}`, T.muted);
+  if (nDone !== 0) haloText(c, ringNote(), mx, H - 12, `700 11px ${FONT_UI}`, T.ink2);
   haloText(c, `${ion().sym}-selective channel${S.gate === 1 ? '' : S.gate === 0 ? ' · closed' : ' · half open'}`, mx, cy + chH + 15, `700 12px ${FONT_UI}`, T.ink2);
   haloText(c, S.mode === 'clamp' ? 'membrane voltage · held' : 'membrane voltage', mx, 20, `700 11px ${FONT_UI}`, T.ink2);
   haloText(c, `${fmtSigned(S.Vm, 1)} mV`, mx, 40, `600 16px ${FONT_MONO}`, T.ink);
 }
 
+function ringNote() {                        // what the rings mean, and how that compares with a real cell
+  const n = Math.abs(nDone), sym = ion().sym;
+  if (NARROW) return `ringed: the ${n} that crossed`;
+  if (S.tiny) return `ringed: the ${n} ${sym} that crossed · in this tiny box they dent the gradient`;
+  const f = realFraction();
+  return f && f < 0.02 ? `ringed: the ${n} ${sym} that crossed · in a real cell, 1 in ${withCommas(parseFloat((1 / f).toPrecision(2)))} of its ${sym}` : `ringed: the ${n} ${sym} that crossed`;
+}
+
 /* ---------- trace drawing ---------- */
+const TRACE_S = 30;
+let traceMap = null;
 const trace = $('#trace'), tctx = trace.getContext('2d'), tip = $('#tip');
 let hoverX = null;
 function fitTrace() {
@@ -831,52 +974,63 @@ function fitTrace() {
 }
 function drawTrace() {
   const c = tctx, w = trace.clientWidth, h = trace.clientHeight;
-  const padL = 44, padR = 126, padT = 10, padB = 24;
+  const tf = n => (S.present ? n * 1.3 : n).toFixed(1);
+  const padL = S.present ? 54 : 44, padR = S.present ? 170 : w < 460 ? 96 : 126, padT = 10, padB = S.present ? 30 : 24;
   c.clearRect(0, 0, w, h);
   const E = Eion();
-  let yR = Math.max(100, Math.abs(E) + 20, Math.abs(S.Vm) + 20);
+  let yR = Math.max(100, Math.abs(E) + 20, Math.abs(S.Vm) + 20, S.guess != null ? Math.abs(S.guess) + 20 : 0);
   for (const s of S.trace) yR = Math.max(yR, Math.abs(s.v) + 20);
   yR = Math.ceil(yR / 50) * 50;
-  const t1 = Math.max(30, S.simTime), t0 = t1 - 30;
-  const X = t => padL + (t - t0) / 30 * (w - padL - padR);
+  const t1 = Math.max(TRACE_S, S.simTime), t0 = t1 - TRACE_S;
+  const X = t => padL + (t - t0) / TRACE_S * (w - padL - padR);
   const Y = v => padT + (yR - v) / (2 * yR) * (h - padT - padB);
-  // grid
-  c.font = `11px ${FONT_MONO}`; c.textBaseline = 'middle'; c.textAlign = 'right';
+  traceMap = { padT, padB, h, yR };                           // lets a click on the plot become a prediction
+  c.font = `${tf(11)}px ${FONT_MONO}`; c.textBaseline = 'middle'; c.textAlign = 'right';
   for (let v = -yR; v <= yR; v += 50) {
     c.strokeStyle = v === 0 ? T.line : T.line2; c.lineWidth = 1;
     c.beginPath(); c.moveTo(padL, Y(v)); c.lineTo(w - padR, Y(v)); c.stroke();
     c.fillStyle = T.muted; c.fillText((v > 0 ? '+' : v < 0 ? MINUS : '') + Math.abs(v), padL - 8, Y(v));
   }
   c.textAlign = 'center'; c.textBaseline = 'top';
-  for (let t = Math.ceil(t0 / 5) * 5; t <= t1 + 0.01; t += 5) {
-    c.fillStyle = T.muted; c.fillText(t.toFixed(0) + ' s', X(t), h - padB + 7);
-  }
+  const tStep = (w - padL - padR) / (TRACE_S / 5) < (S.present ? 62 : 44) ? 10 : 5;   // fewer time labels when they would touch
+  for (let t = Math.ceil(t0 / tStep) * tStep; t <= t1 + 0.01; t += tStep) { c.fillStyle = T.muted; c.fillText(t.toFixed(0) + ' s', X(t), h - padB + 7); }
   c.save(); c.translate(12, (padT + h - padB) / 2); c.rotate(-Math.PI / 2); c.textAlign = 'center'; c.textBaseline = 'middle';
-  c.fillStyle = T.muted; c.font = `11px ${FONT_UI}`; c.fillText('mV', 0, 0); c.restore();
-  // E line
+  c.fillStyle = T.muted; c.font = `${tf(11)}px ${FONT_UI}`; c.fillText('mV', 0, 0); c.restore();
+  // the equilibrium line, and the student's prediction
   c.setLineDash([6, 4]); c.strokeStyle = T.ion; c.lineWidth = 1.5;
   c.beginPath(); c.moveTo(padL, Y(E)); c.lineTo(w - padR, Y(E)); c.stroke(); c.setLineDash([]);
-  c.font = `600 11px ${FONT_MONO}`; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillStyle = T.ink2;
-  c.fillText(`E(${ion().sym}) ${fmtSigned(E, 1)} mV`, w - padR + 8, Y(E));
-  const lastV = S.trace.length ? S.trace[S.trace.length - 1].v : 0;
-  c.font = `11px ${FONT_UI}`; c.fillStyle = T.muted;
-  c.fillText('equilibrium', w - padR + 8, Y(E) + (lastV >= E ? 13 : -13));
+  if (S.guess != null) {
+    c.setLineDash([2, 4]); c.strokeStyle = T.ink2; c.lineWidth = 1.5;
+    c.beginPath(); c.moveTo(padL, Y(S.guess)); c.lineTo(w - padR, Y(S.guess)); c.stroke(); c.setLineDash([]);
+  }
   // Vm line
   const pts = S.trace.filter(s => s.t >= t0 - 0.5);
+  let last = null;
   if (pts.length) {
     c.strokeStyle = T.ink; c.lineWidth = 2; c.lineJoin = 'round';
     c.beginPath();
     pts.forEach((s, i) => { const x = Math.max(padL, X(s.t)); i ? c.lineTo(x, Y(s.v)) : c.moveTo(x, Y(s.v)); });
     c.stroke();
-    const last = pts[pts.length - 1];
+    last = pts[pts.length - 1];
     c.fillStyle = T.ink; c.beginPath(); c.arc(X(last.t), Y(last.v), 3.5, 0, TAU); c.fill();
-    c.fillStyle = T.ink; c.textAlign = 'left';
-    const ly = Math.abs(Y(last.v) - Y(E)) < 14 ? Y(last.v) + (last.v >= E ? -14 : 14) : Y(last.v);
-    c.font = `600 11px ${FONT_MONO}`; c.fillText(`Vm ${fmtSigned(last.v, 1)} mV`, w - padR + 8, ly);
   }
+  // right-hand labels, stacked so they never overlap
+  const mono = `600 ${tf(11)}px ${FONT_MONO}`, ui = `${tf(11)}px ${FONT_UI}`, lh = 13 * (S.present ? 1.3 : 1), short = w < 460;
+  const lab = [{ y: Y(E), lines: [[`E(${ion().sym}) ${fmtSigned(E, 1)}${short ? '' : ' mV'}`, mono, T.ink2], ['equilibrium', ui, T.muted]] }];
+  if (last) lab.push({ y: Y(last.v), lines: [[`Vm ${fmtSigned(last.v, 1)}${short ? '' : ' mV'}`, mono, T.ink]] });
+  if (S.guess != null) {
+    const settled = balancedLatch && S.mode === 'free';
+    lab.push({ y: Y(S.guess), lines: [[`guess ${fmtSigned(S.guess, 0)}`, mono, T.ink2]].concat(settled ? [[`off by ${Math.abs(S.Vm - S.guess).toFixed(0)}`, ui, T.muted]] : []) });
+  }
+  lab.sort((a, b) => a.y - b.y);
+  let bottom = -Infinity;
+  for (const l of lab) { l.top = Math.max(l.y - lh / 2, bottom + 2); bottom = l.top + l.lines.length * lh; }
+  const over = bottom - (h - 2); if (over > 0) lab.forEach(l => { l.top -= over; });
+  c.textAlign = 'left'; c.textBaseline = 'middle';
+  for (const l of lab) l.lines.forEach(([t, font, col], i) => { c.font = font; c.fillStyle = col; c.fillText(t, w - padR + 8, l.top + lh / 2 + i * lh); });
   // hover
   if (hoverX !== null && pts.length) {
-    const tH = t0 + (hoverX - padL) / (w - padL - padR) * 20;
+    const tH = t0 + (hoverX - padL) / (w - padL - padR) * TRACE_S;
     let best = pts[0];
     for (const s of pts) if (Math.abs(s.t - tH) < Math.abs(best.t - tH)) best = s;
     if (Math.abs(best.t - tH) < 1) {
@@ -889,34 +1043,48 @@ function drawTrace() {
     } else tip.style.display = 'none';
   } else tip.style.display = 'none';
 }
+trace.addEventListener('pointerdown', e => {                  // click the plot to mark where you think Vm will settle
+  if (!traceMap) return;
+  const r = trace.getBoundingClientRect(), y = e.clientY - r.top, { padT, padB, h, yR } = traceMap;
+  if (y < padT || y > h - padB) return;
+  S.guess = Math.round(yR - (y - padT) / (h - padT - padB) * 2 * yR);
+  note(`Your prediction: ${fmtSigned(S.guess, 0)} mV.`, S.playing ? 'Watch where V<sub>m</sub> actually settles.' : 'Now press <b>Play</b> and see where V<sub>m</sub> actually settles. Click the plot again to move your guess.');
+  updateUI();
+});
 trace.addEventListener('mousemove', e => { hoverX = e.offsetX; });
 trace.addEventListener('mouseleave', () => { hoverX = null; });
 
 /* ---------- narrator ---------- */
 let balancedLatch = false, narrKey = '', narrAt = 0, handNote = null, holdUntil = 0;
-const approx = v => { const r = Math.round(Math.abs(v) / 5) * 5; return (r === 0 ? 'under 3' : 'about ' + r) + ' mV'; };
-function narrate(f, E) {
-  const I = ion(), sym = I.sym, Es = `E<sub>${I.sub}</sub>`;
+const r5 = v => Math.round(Math.abs(v) / 5) * 5;
+const note = (head, detail, ms = 7000) => { handNote = { until: performance.now() + ms, key: 'note:' + head, head, detail }; };
+function narrate(f, E) {                     // a one-line headline you can read from the back, and the detail underneath
+  const I = ion(), sym = I.sym, Es = `E<sub>${I.sub}</sub>`, vm = fmtSigned(S.Vm, 0);
   const cc = conc(), hi = cc.cin > cc.cout ? 'inside' : 'outside';
   const lo = Math.min(cc.cin, cc.cout), ratio = lo > 0 ? parseFloat((Math.max(cc.cin, cc.cout) / lo).toPrecision(2)) : 0;
-  const tinyTxt = S.tiny && (Math.abs(netOut()) >= 1) ? ` In this tiny box the concentrations follow the dots: ${sym} is now ${fmtCshort(cc.cin)} mM in and ${fmtCshort(cc.cout)} mM out, so ${Es} has slid to ${fmtSigned(E, 0)} mV and the diffusion push has shrunk to ${approx(f.chem)}. A real cell’s gradient is far too big to dent.` : '';
-  const leaving = f.net > 0, moving = leaving ? 'leaving' : 'entering';
-  const insideSign = ((leaving && I.z > 0) || (!leaving && I.z < 0)) ? 'negative' : 'positive';
-  const chemA = approx(f.chem), elecA = approx(f.elec), netA = approx(f.net);
-  if (Math.abs(f.chem) < 0.5) return `Equal concentrations on both sides, so there is no diffusion push. Nothing drives ${sym} either way, and ${Es} is 0 mV.`;
-  if (S.gate === 0) return `The channel is closed, so nothing can cross and V<sub>m</sub> stays at ${fmtSigned(S.Vm, 0)} mV. ${Math.abs(f.net) < 3 ? 'The pushes happen to be balanced anyway.' : `The pushes do not cancel (net ${netA} ${f.net > 0 ? 'outward' : 'inward'}), but there is no path through.`} Open the channel to let ions move.`;
-  const half = S.gate < 1 ? ' The channel is half open, so this takes about twice as long, but it settles at the same voltage.' : '';
+  const leaving = f.net > 0, moving = leaving ? 'leaving' : 'entering', dir = leaving ? 'outward' : 'inward';
+  const inSign = (leaving === (I.z > 0)) ? MINUS : '+', outSign = inSign === '+' ? MINUS : '+';
+  const tinyTxt = S.tiny && Math.abs(nIons) >= 1 ? ` In this tiny box the concentrations follow the dots: ${sym} is now ${fmtCshort(cc.cin)} mM inside and ${fmtCshort(cc.cout)} mM outside, so ${Es} has slid to ${fmtSigned(E, 0)} mV.` : '';
+  const half = S.gate > 0 && S.gate < 1 ? ' The channel is half open, so this takes about twice as long, but it settles at the same voltage.' : '';
+  if (Math.abs(f.chem) < 0.5) return { key: 'equal', head: 'No gradient, so no diffusion push.', detail: `Nothing drives ${sym} either way, and ${Es} is 0 mV.` };
+  if (S.gate === 0) return { key: 'closed', head: 'The channel is closed. Nothing can cross.',
+    detail: `V<sub>m</sub> stays at ${vm} mV. ${Math.abs(f.net) < 3 ? 'The pushes happen to cancel anyway.' : `The pushes do not cancel, a net ${r5(f.net)} mV ${dir}, but there is no path through.`} Open the channel to let ions move.` };
   if (S.mode === 'clamp') {
-    const gap = S.Vm - E;
-    if (Math.abs(f.net) < 3) return `You are holding V<sub>m</sub> right at ${Es}. The two pushes cancel, so ${sym} crosses equally in both directions.`;
-    return `You are holding V<sub>m</sub> at ${fmtSigned(S.Vm, 0)} mV, ${Math.abs(gap).toFixed(0)} mV ${gap > 0 ? 'above' : 'below'} ${Es} (${fmtSigned(E, 0)} mV). The pushes do not cancel, so ${sym} keeps ${moving} the cell with a net push of ${netA}. The hold absorbs that charge, so V<sub>m</sub> cannot drift.`;
+    if (Math.abs(f.net) < 3) return { key: 'clamp-bal', head: `Held at ${Es}: the pushes cancel.`, detail: `${sym} crosses equally in both directions.` };
+    return { key: 'clamp', head: `Held at ${vm} mV: ${sym} keeps ${moving}.`,
+      detail: `That is ${Math.abs(S.Vm - E).toFixed(0)} mV ${S.Vm > E ? 'above' : 'below'} ${Es}, so the net push is about ${r5(f.net)} mV ${dir}. The hold absorbs the charge that crosses, so V<sub>m</sub> cannot drift.${S.tiny ? ` In the tiny box the ions still pile up, so ${Es} creeps toward the held voltage.` : ''}` };
   }
-  if (S.countOut + S.countIn === 0 && Math.abs(S.Vm) < 0.05) return `Starting point. V<sub>m</sub> is 0 mV, so there is no electrical push yet. Diffusion pushes ${sym} ${leaving ? 'out' : 'in'} because there is ${ratio}× more of it ${hi}; a few still hop the other way, just ${ratio}× less often. Press <b>Next ion</b>, drag an ion through the channel, or press <b>Play</b>.`;
-  if (balancedLatch) return S.tiny
-    ? `Balanced at ${fmtSigned(S.Vm, 0)} mV, well short of the ${fmtSigned(Ebase(), 0)} mV a real cell reaches. Every crossing changed the concentrations (${sym} is now ${fmtCshort(cc.cin)} mM in, ${fmtCshort(cc.cout)} mM out), so the diffusion push shrank as the electrical push grew and ${Es} slid to meet V<sub>m</sub>. A real cell never does this: it holds about 50,000 times more ${sym} than it takes to charge the membrane.`
-    : `Balanced. The electrical pull now matches the diffusion push, so ${sym} crosses equally in both directions and the net push is zero. V<sub>m</sub> sits at ${Es}, the equilibrium potential. The concentrations have not evened out; the pushes have.`;
-  if (Math.abs(f.elec) < Math.abs(f.chem)) return `${sym} is ${moving} the cell because the diffusion push (${chemA}) is stronger than the electrical push (${elecA}). Traffic runs both ways: right now about ${(() => { const rr = rates(); const q = leaving ? rr.kOut / Math.max(rr.kIn, 1e-9) : rr.kIn / Math.max(rr.kOut, 1e-9); return q >= 10 ? Math.round(q) : q.toFixed(1); })()} ${leaving ? 'leave' : 'enter'} for every one that hops the other way, and that ratio shrinks as the electrical push grows. Each net crossing leaves one more unpaired charge on each face (the − and + marks), making the inside more ${insideSign} and the electrical push stronger, until the two match.${half}${tinyTxt}`;
-  return `${sym} is ${moving} the cell because the electrical push (${elecA}) is now stronger than the diffusion push (${chemA}). Each crossing weakens the electrical push until the two match again.${half}${tinyTxt}`;
+  if (S.countOut + S.countIn === 0 && Math.abs(S.Vm) < 0.05) return { key: 'start', head: 'Start: only diffusion is pushing.',
+    detail: `V<sub>m</sub> is 0 mV, so there is no electrical push yet. There is ${ratio}× more ${sym} ${hi}, so diffusion pushes it ${leaving ? 'out' : 'in'}. A few still hop the other way, just ${ratio}× less often. Press <b>Let one cross</b>, drag an ion through the channel, or press <b>Play</b>.` };
+  if (balancedLatch) {
+    if (S.tiny) return { key: 'bal-tiny', head: `Balanced at ${vm} mV, short of the real ${Es}.`,
+      detail: `Every crossing changed the concentrations, now ${fmtCshort(cc.cin)} mM inside and ${fmtCshort(cc.cout)} mM outside, so the diffusion push shrank as the electrical push grew. A real cell never does this: its gradient is far too big for these crossings to dent.` };
+    return { key: 'bal', head: `Balanced at ${Es}: the pushes cancel.`, detail: `${sym} crosses equally in both directions, so V<sub>m</sub> holds at ${vm} mV. The concentrations did not even out. The pushes did.` };
+  }
+  const rr = rates(), q = leaving ? rr.kOut / Math.max(rr.kIn, 1e-9) : rr.kIn / Math.max(rr.kOut, 1e-9), qs = q >= 10 ? Math.round(q) : q.toFixed(1);
+  if (Math.abs(f.elec) < Math.abs(f.chem)) return { key: 'diff', head: `${sym} ${moving}: diffusion ${r5(f.chem)} mV beats electrical ${r5(f.elec)} mV.`,
+    detail: `About ${qs} ${leaving ? 'leave' : 'enter'} for every one that hops back, and that ratio shrinks as the electrical push grows. Each ion that crosses leaves unpaired charge behind, ${inSign} inside and ${outSign} outside, so the electrical push keeps growing until the two match. Ringed ions are the ones that crossed.${half}${tinyTxt}` };
+  return { key: 'elec', head: `${sym} ${moving}: electrical ${r5(f.elec)} mV beats diffusion ${r5(f.chem)} mV.`, detail: `Each crossing weakens the electrical push until the two match again.${half}${tinyTxt}` };
 }
 
 /* ---------- UI updates ---------- */
@@ -945,8 +1113,9 @@ function updateUI() {
   const move = f.net > 0.05 ? `${I.sym} leaves the cell` : f.net < -0.05 ? `${I.sym} enters the cell` : 'equal traffic both ways';
   $('#roDfNote').innerHTML = Math.abs(df) < 0.05 ? `V<sub>m</sub> is at E<sub>${I.sub}</sub>: ${cur}, ${move}` : `V<sub>m</sub> is ${Math.abs(df).toFixed(1)} mV ${df > 0 ? 'above' : 'below'} E<sub>${I.sub}</sub>: ${cur}, ${move}`;
   if (S.mode === 'free') { if (Math.abs(f.net) < 3) balancedLatch = true; else if (Math.abs(f.net) > 10) balancedLatch = false; } else balancedLatch = false;
-  const txt = (handNote && performance.now() < handNote.until) ? handNote.html : narrate(f, E);
-  if (txt.slice(0, 30) !== narrKey || performance.now() - narrAt > 1000) { $('#narrText').innerHTML = txt; narrKey = txt.slice(0, 30); narrAt = performance.now(); }
+  const nar = (handNote && performance.now() < handNote.until) ? handNote : narrate(f, E), now = performance.now();
+  if (nar.key !== narrKey || now - narrAt > 800) { $('#narrHead').innerHTML = nar.head; $('#narrText').innerHTML = nar.detail; narrKey = nar.key; narrAt = now; }
+  if (!S.present) checkChallenges();
   // flux
   const rr = rates(); S.rateOut = rr.kOut; S.rateIn = rr.kIn;
   const rmax = Math.max(S.rateOut, S.rateIn, 10);
@@ -959,8 +1128,8 @@ function updateUI() {
   $('#totNet').textContent = tn === 0 ? '0' : `${withCommas(Math.abs(tn))} ${tn > 0 ? 'outward' : 'inward'}`;
 }
 function updateMfoot() {
-  const chemNow = Math.abs(forces().chem).toFixed(0);
-  $('#mfoot').textContent = `Both pushes are measured in millivolts so they can be compared directly: a diffusion push of ${chemNow} mV means it would take ${chemNow} mV of membrane voltage to cancel it.`;
+  const chemNow = Math.abs(forces().chem).toFixed(0), z = Math.abs(ion().z);
+  $('#mfoot').textContent = `Both pushes are given per unit of charge, in millivolts, so they compare directly with the membrane voltage: a diffusion push of ${chemNow} mV takes ${chemNow} mV of membrane voltage to cancel.` + (z > 1 ? ` ${ion().sym} carries ${z} charges, so each ion feels ${z}× this energy.` : '');
 }
 function renderEquation() {
   const I = ion(), E = Eion(), slope = VT() * Math.LN10, z = I.z, c = conc();
@@ -974,7 +1143,9 @@ function updateStatic() {
   const I = ion(), E = Eion(), vt = VT(), slope = vt * Math.LN10, z = I.z;
   document.body.classList.remove('ion-K', 'ion-Na', 'ion-Cl', 'ion-Ca'); document.body.classList.add('ion-' + I.key); readTokens();
   $('#symIn').textContent = `[${I.sym}]`; $('#symOut').textContent = `[${I.sym}]`;
-  $('#meterTitle').textContent = `push on ${I.sym}, in mV`;
+  $('#meterTitle').textContent = `push on ${I.sym}${Math.abs(z) > 1 ? ' per charge' : ''}, in mV`;
+  $('#stepLbl').innerHTML = `Each ${I.sym} that crosses shifts V<sub>m</sub> by`;
+  $$('#stepSeg button').forEach(b => { b.textContent = `${parseFloat((parseFloat(b.dataset.step) * Math.abs(z)).toPrecision(3))} mV`; });
   $('#holdBtn').setAttribute('aria-pressed', S.mode === 'clamp' ? 'true' : 'false'); $('#holdBtn').textContent = S.mode === 'clamp' ? 'Holding' : 'Hold';
   $('#legendIon').textContent = `${I.sym} ions`;
   updateMfoot();
@@ -1008,15 +1179,15 @@ function seg(id, attr, fn) {
     fn(b.dataset[attr]);
   });
 }
-seg('#ionSeg', 'ion', k => { S.ion = k; S.cin = IONS[k].cin; S.cout = IONS[k].cout; reset(); });
+seg('#ionSeg', 'ion', k => { S.ion = k; S.cin = IONS[k].cin; S.cout = IONS[k].cout; S.guess = null; reset(); });
 function setVmByHand(v) {                     // the slider acts like an electrode: it charges the membrane directly, no ions move
   S.Vm = clamp(v, -150, 150); S.nOut = -S.Vm / S.step; if (S.mode === 'clamp') S.clampV = S.Vm;
   rebuildChargeStatic(); balancedLatch = false; holdUntil = performance.now() + 500;
   if (S.mode === 'free') {
     const E = Eion(), gap = S.Vm - E, I = ion(), f = forces();
-    handNote = { until: performance.now() + 6000, html: Math.abs(f.net) < 3
-      ? `You set V<sub>m</sub> to ${fmtSigned(S.Vm, 0)} mV, right at E<sub>${I.sub}</sub>: the pushes cancel, so nothing changes on net.`
-      : `You set V<sub>m</sub> to ${fmtSigned(S.Vm, 0)} mV, ${Math.abs(gap).toFixed(0)} mV ${gap > 0 ? 'above' : 'below'} E<sub>${I.sub}</sub>. The pushes do not cancel, so ${I.sym} will ${f.net > 0 ? 'leave' : 'enter'} until V<sub>m</sub> is back at E<sub>${I.sub}</sub>. ${S.playing ? 'Watch it drift back.' : 'Press <b>Play</b> to watch, or <b>Hold</b> to keep it there.'}` };
+    if (Math.abs(f.net) < 3) note(`You set V<sub>m</sub> to ${fmtSigned(S.Vm, 0)} mV, right at E<sub>${I.sub}</sub>.`, 'The pushes cancel, so nothing changes on net.');
+    else note(`You set V<sub>m</sub> to ${fmtSigned(S.Vm, 0)} mV, ${Math.abs(gap).toFixed(0)} mV ${gap > 0 ? 'above' : 'below'} E<sub>${I.sub}</sub>.`,
+      `The pushes do not cancel, so ${I.sym} will ${f.net > 0 ? 'leave' : 'enter'} until V<sub>m</sub> is back at E<sub>${I.sub}</sub>. ${S.playing ? 'Watch it drift back.' : 'Press <b>Play</b> to watch, or <b>Hold</b> to keep it there.'}${S.tiny ? ' The slider moves charge, not ions, so the concentrations stay where they were.' : ''}`);
   }
   pushTrace(); updateUI();
 }
@@ -1027,13 +1198,12 @@ $('#holdBtn').addEventListener('click', () => {
   S.nOut = -S.Vm / S.step; rebuildChargeStatic(); pushTrace(); updateStatic();
 });
 seg('#stepSeg', 'step', v => { S.step = parseFloat(v); S.nOut = -S.Vm / S.step; rebuildChargeStatic(); updateUI(); });
-function setTiny(on) {
-  S.tiny = on; balancedLatch = false;
+function setTiny(on) {                        // switching box size starts over, so every crossing is counted from zero
+  S.tiny = on; reset();
   const I = ion(), E0 = Ebase();
-  $('#tinyHint').textContent = on ? `tiny box: each crossing moves one dot’s worth (${fmtCshort(dotMM())} mM), so the gradient is used up as it charges the membrane` : 'real cell: the gradient is far too big for these crossings to dent';
-  handNote = { until: performance.now() + 9000, html: on
-    ? `Tiny box: from now on every crossing changes the concentrations by one dot’s worth (${fmtCshort(dotMM())} mM). Watch the diffusion push shrink as ions cross while the electrical push grows; they will meet near ${fmtSigned(tinyEquilibrium(), 0)} mV instead of at E<sub>${I.sub}</sub> = ${fmtSigned(E0, 0)} mV.`
-    : `Real cell again: the gradient is treated as fixed, because a real cell holds about 50,000 times more ${I.sym} than it takes to charge the membrane, so E<sub>${I.sub}</sub> stays at ${fmtSigned(E0, 0)} mV.` };
+  $('#tinyHint').textContent = on ? `tiny box: each ion that crosses moves one dot’s worth, ${fmtCshort(dotMM())} mM, so the gradient gets used up as it charges the membrane` : 'real cell: the gradient is far too big for these crossings to dent';
+  if (on) note('Tiny box: the concentrations now follow the dots.', `Starting over. Each ion that crosses changes the concentrations by one dot’s worth, ${fmtCshort(dotMM())} mM. Press <b>Play</b>: the diffusion push will shrink as the electrical push grows, and they will meet near ${fmtSigned(tinyEquilibrium(), 0)} mV instead of at E<sub>${I.sub}</sub> = ${fmtSigned(E0, 0)} mV.`, 12000);
+  else note('Real cell again: the gradient stays fixed.', `Starting over. A real cell holds far more ${I.sym} than it takes to charge the membrane, so E<sub>${I.sub}</sub> stays at ${fmtSigned(E0, 0)} mV.`, 9000);
   updateStatic();
 }
 seg('#tinySeg', 'tiny', v => setTiny(v === '1'));
@@ -1052,13 +1222,18 @@ $('#diam').addEventListener('input', e => { const v = parseFloat(e.target.value)
 $('#play').addEventListener('click', () => setPlaying(!S.playing));
 $('#next').addEventListener('click', nextIon);
 $('#reset').addEventListener('click', reset);
+let spaceGuard = false;                        // shortcuts work even after a button was clicked; only typing fields are left alone
+const typing = el => { const t = (el && el.tagName || '').toLowerCase(); return t === 'textarea' || t === 'select' || (t === 'input' && !['range', 'button', 'checkbox', 'radio'].includes(el.type)) || !!(el && el.isContentEditable); };
 window.addEventListener('keydown', e => {
-  const tag = (e.target.tagName || '').toLowerCase();
-  if (tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'button') return;
-  if (e.key === ' ') { e.preventDefault(); setPlaying(!S.playing); }
-  else if (e.key === 'n' || e.key === 'N') nextIon();
-  else if (e.key === 'r' || e.key === 'R') reset();
+  if (e.ctrlKey || e.metaKey || e.altKey || typing(e.target)) return;
+  const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  if (k === ' ') { e.preventDefault(); spaceGuard = true; if (!e.repeat) setPlaying(!S.playing); }
+  else if (k === 'c' || k === 'n') { e.preventDefault(); nextIon(); }
+  else if (k === 'r') { e.preventDefault(); reset(); }
+  else if (k === 'p') { e.preventDefault(); setPresent(!S.present); }
+  else if (k === 'Escape' && S.present) setPresent(false);
 });
+window.addEventListener('keyup', e => { if (e.key === ' ' && spaceGuard) { e.preventDefault(); spaceGuard = false; } });
 
 /* ---------- hands on: drag an ion through the channel, click the channel to open or close it ---------- */
 const toLogical = e => { const r = stage.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H }; };
@@ -1087,15 +1262,17 @@ function dropDrag() {
   const d = drag; drag = null; stage.style.cursor = '';
   const side = d.x < mx ? 'in' : 'out', r = REG[side];
   const x = clamp(d.x > mL - 9 && d.x < mR + 9 ? (side === 'in' ? mL - 16 : mR + 16) : d.x, r.x0, r.x1);
-  bulk[side].push({ x, y: clamp(d.y, r.y0, r.y1), vx: 0, vy: 0, state: 'in', drift: 0, push: 0 });
+  const nd = { x, y: clamp(d.y, r.y0, r.y1), vx: 0, vy: 0, state: 'in', drift: 0, push: 0, ring: d.ring, t: d.t };
+  bulk[side].push(nd);
   if (side !== d.from) {
-    const outward = side === 'out', I = ion();
-    nMoved += outward ? 1 : -1;
+    const outward = side === 'out', I = ion(), wasBalanced = balancedLatch && S.mode === 'free';
+    nMoved += outward ? 1 : -1; nDone += outward ? 1 : -1;
+    nd.ring = false; nd.t = ++arrivals; syncRings(nd);
     if (S.mode !== 'clamp') nCharge += outward ? 1 : -1;
     crossing(outward);
-    handNote = { until: performance.now() + 6000, html: S.mode === 'clamp'
-      ? `You moved one ${I.sym} ${outward ? 'out' : 'in'} by hand. The clamp absorbed its charge, so V<sub>m</sub> did not change.`
-      : `You moved one ${I.sym} ${outward ? 'out' : 'in'} by hand: one more unpaired charge on each face, and V<sub>m</sub> shifted by ${S.step * Math.abs(I.z)} mV. ${S.playing ? 'Watch whether the traffic undoes it.' : 'Press <b>Play</b> to see whether the traffic undoes it.'}` };
+    if (wasBalanced && !outward && S.ion === 'K') chArm.disturb = S.simTime;
+    if (S.mode === 'clamp') note(`You moved one ${I.sym} ${outward ? 'out' : 'in'} by hand.`, 'The hold absorbed its charge, so V<sub>m</sub> did not change.');
+    else note(`You moved one ${I.sym} ${outward ? 'out' : 'in'} by hand.`, `That leaves one more unpaired charge on each face, so V<sub>m</sub> shifted by ${S.step * Math.abs(I.z)} mV. ${S.playing ? 'Watch whether the traffic undoes it.' : 'Press <b>Play</b> to see whether the traffic undoes it.'}`);
     pushTrace(); updateUI();
   }
 }
@@ -1104,7 +1281,7 @@ stage.addEventListener('pointerdown', e => {
   const hit = findDot(p, e.pointerType === 'touch' ? 24 : 14);
   if (hit) {
     const arr = bulk[hit.side]; arr.splice(arr.indexOf(hit.d), 1);
-    drag = { x: hit.d.x, y: hit.d.y, from: hit.side, side: hit.side };
+    drag = { x: hit.d.x, y: hit.d.y, from: hit.side, side: hit.side, ring: hit.d.ring, t: hit.d.t };
     try { stage.setPointerCapture(e.pointerId); } catch (_) {}
     stage.style.cursor = 'grabbing'; e.preventDefault(); return;
   }
@@ -1136,11 +1313,134 @@ viewBtn.addEventListener('click', () => setView(!document.body.classList.contain
 let startSimple = true; try { startSimple = localStorage.getItem('nernst-view') !== 'full'; } catch (_) {}
 setView(startSimple);
 
+/* ---------- present mode: one screen, big type, full screen when the browser allows it ---------- */
+let presentFs = false;
+function layoutPresent() {
+  if (!S.present) return;
+  const wrap = $('.wrap'), cs = getComputedStyle(wrap);
+  const used = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + $('header.top').offsetHeight + (parseFloat(cs.rowGap) || 10)
+    + $('.card.controls').offsetHeight + 12 + $('#narr').offsetHeight + 10 + 30;
+  document.body.style.setProperty('--stage-max-h', Math.max(180, window.innerHeight - used) + 'px');
+}
+function setPresent(on) {
+  if (on === S.present) return;
+  S.present = on;
+  document.body.classList.toggle('present', on);
+  $('#presentBtn').textContent = on ? 'Exit presentation' : 'Present';
+  if (on) {
+    window.scrollTo(0, 0);
+    const el = document.documentElement;
+    if (el.requestFullscreen && !document.fullscreenElement) el.requestFullscreen().then(() => { presentFs = true; }).catch(() => { presentFs = false; });
+  } else {
+    if (presentFs && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    presentFs = false;
+  }
+  layoutPresent(); fitStage(); fitTrace();
+}
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && presentFs) { presentFs = false; setPresent(false); }
+  else { layoutPresent(); fitStage(); fitTrace(); }
+});
+$('#presentBtn').addEventListener('click', () => setPresent(!S.present));
+
+/* ---------- quick controls under the picture on narrow screens ---------- */
+$('#mPlay').addEventListener('click', () => setPlaying(!S.playing));
+$('#mNext').addEventListener('click', nextIon);
+$('#mReset').addEventListener('click', reset);
+
+/* ---------- challenges: goals that check themselves ---------- */
+const CH = [
+  { id: 'balance', title: 'Find the balance point', how: 'With K⁺, let ions cross until the two pushes cancel.',
+    why: 'That voltage is E<sub>K</sub>, the equilibrium potential. The concentrations did not even out. The pushes did.',
+    done: c => c.ion === 'K' && c.bal && !S.tiny && c.crossed >= 5 },
+  { id: 'disturb', title: 'Knock it off balance', how: 'At the balance point, drag one K⁺ back inside by hand, then press Play. Predict first: will it stay there?',
+    why: 'The traffic undid your move. One extra K⁺ inside made the inside less negative, so diffusion won for a moment and pushed one back out.',
+    done: c => c.ion === 'K' && chArm.disturb != null && S.playing && S.simTime - chArm.disturb > 1.5 && Math.abs(S.Vm - Eion()) < 1.5 },
+  { id: 'aim60', title: 'Aim for −60 mV', how: 'Change one K⁺ concentration so the membrane settles at −60 mV.',
+    why: 'Only the ratio matters. About 10 : 1 gives −60 mV at body temperature, whichever concentration you changed.',
+    done: c => c.ion === 'K' && c.bal && !S.tiny && Math.abs(S.Vm + 60) < 2.5 },
+  { id: 'flip', title: 'Flip the sign', how: 'Using K⁺ alone, make the membrane settle at a positive voltage.',
+    why: 'With more K⁺ outside than inside, diffusion pushes K⁺ in, and the inside ends up positive.',
+    done: c => c.ion === 'K' && c.bal && S.Vm > 5 },
+  { id: 'anion', title: 'The anion puzzle', how: 'Switch to Cl⁻. Predict the sign of V<sub>m</sub> at balance, then let it settle.',
+    why: 'Cl⁻ moves in, carrying negative charge, so the inside goes negative even though Cl⁻ moves the opposite way from K⁺.',
+    done: c => c.ion === 'Cl' && c.bal && S.Vm < -20 },
+];
+const chArm = { disturb: null };
+let chDone = new Set();
+try { chDone = new Set(JSON.parse(localStorage.getItem('nernst-challenges') || '[]')); } catch (_) {}
+function renderChallenges(fresh) {
+  $('#chList').innerHTML = CH.map(ch => {
+    const d = chDone.has(ch.id);
+    return `<li class="${d ? 'done' : ''}${fresh === ch.id ? ' new' : ''}"><span class="mk" aria-hidden="true">${d ? '✓' : ''}</span><div><b>${ch.title}</b><span class="${d ? 'why' : ''}">${d ? ch.why : ch.how}</span></div></li>`;
+  }).join('');
+  $('#chScore').textContent = `${chDone.size} of ${CH.length} done`;
+}
+function checkChallenges() {
+  const c = { ion: S.ion, bal: balancedLatch && S.mode === 'free' && S.gate > 0, crossed: S.countOut + S.countIn };
+  for (const ch of CH) {
+    if (chDone.has(ch.id) || !ch.done(c)) continue;
+    chDone.add(ch.id);
+    try { localStorage.setItem('nernst-challenges', JSON.stringify([...chDone])); } catch (_) {}
+    renderChallenges(ch.id);
+    note(`Challenge done: ${ch.title}.`, ch.why, 9000);
+  }
+}
+$('#chReset').addEventListener('click', () => { chDone.clear(); chArm.disturb = null; try { localStorage.removeItem('nernst-challenges'); } catch (_) {} renderChallenges(); });
+
+/* ---------- links that open in a chosen setup ---------- */
+const PAGE_URL = 'https://torryscott.github.io/NeuroSim/nernst-tug-of-war.html';
+function setupUrl() {
+  const p = new URLSearchParams();
+  p.set('ion', S.ion);
+  if (S.cin !== ion().cin) p.set('in', fmtCshort(S.cin));
+  if (S.cout !== ion().cout) p.set('out', fmtCshort(S.cout));
+  if (S.gate !== 1) p.set('gate', S.gate);
+  if (S.tempC !== 37) p.set('temp', S.tempC);
+  if (S.step !== 3) p.set('step', S.step);
+  if (S.speed !== 1) p.set('speed', S.speed);
+  if (S.tiny) p.set('tiny', 1);
+  if (S.mode === 'clamp') { p.set('vm', Math.round(S.Vm)); p.set('hold', 1); }
+  if (!document.body.classList.contains('simple')) p.set('view', 'full');
+  const base = /\.github\.io$/.test(location.hostname) ? location.origin + location.pathname : PAGE_URL;
+  return base + '?' + p.toString();
+}
+function applyUrlState() {
+  let p; try { p = new URLSearchParams(location.search); } catch (_) { return; }
+  if (![...p.keys()].length) return;
+  const num = (k, lo, hi) => { const v = parseFloat(p.get(k)); return Number.isFinite(v) ? clamp(v, lo, hi) : null; };
+  const pick = (id, attr, val) => $$(`${id} button`).forEach(b => b.setAttribute('aria-checked', b.dataset[attr] === String(val) ? 'true' : 'false'));
+  const k = p.get('ion'); if (k && IONS[k]) { S.ion = k; S.cin = IONS[k].cin; S.cout = IONS[k].cout; pick('#ionSeg', 'ion', k); }
+  const ci = num('in', 0.0001, 1000); if (ci != null) S.cin = ci;
+  const co = num('out', 0.0001, 1000); if (co != null) S.cout = co;
+  const t = num('temp', 0, 45); if (t != null) { S.tempC = Math.round(t); $('#rTemp').value = S.tempC; }
+  const st = p.get('step'); if (['6', '3', '1.5'].includes(st)) { S.step = parseFloat(st); pick('#stepSeg', 'step', st); }
+  const sp = p.get('speed'); if (['0.5', '1', '2', '4'].includes(sp)) { S.speed = parseFloat(sp); pick('#speedSeg', 'speed', sp); }
+  const g = p.get('gate'); if (['1', '0.5', '0'].includes(g)) { S.gate = parseFloat(g); pick('#gateSeg', 'gate', g); }
+  S.tiny = p.get('tiny') === '1'; pick('#tinySeg', 'tiny', S.tiny ? '1' : '0');
+  const vm = num('vm', -150, 150);
+  if (p.get('hold') === '1' && vm != null) { S.mode = 'clamp'; S.clampV = vm; }
+  reset();
+  if (vm != null && S.mode !== 'clamp') { S.Vm = vm; S.nOut = -S.Vm / S.step; rebuildChargeStatic(); pushTrace(); }
+  if (p.get('view') === 'full') setView(false);
+  if (p.get('present') === '1') setPresent(true);
+  if (p.get('play') === '1') setPlaying(true);
+  updateStatic();
+}
+$('#copyLink').addEventListener('click', async () => {
+  const url = setupUrl(), btn = $('#copyLink'), out = $('#linkOut');
+  let ok = false;
+  try { await navigator.clipboard.writeText(url); ok = true; } catch (_) {}
+  if (ok) { btn.textContent = 'Link copied'; out.hidden = true; setTimeout(() => { btn.textContent = 'Copy a link to this setup'; }, 2000); }
+  else { out.hidden = false; out.value = url; out.focus(); out.select(); btn.textContent = 'Copy the link below'; }
+});
+
 /* ---------- theme & resize ---------- */
-new ResizeObserver(() => { fitStage(); fitTrace(); }).observe($('.wrap'));
+new ResizeObserver(() => { layoutPresent(); fitStage(); fitTrace(); }).observe($('.wrap'));
+window.addEventListener('resize', () => { layoutPresent(); fitStage(); fitTrace(); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readTokens);
 new MutationObserver(readTokens).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { fitStage(); fitTrace(); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { layoutPresent(); fitStage(); fitTrace(); });
 
 /* ---------- main loop ---------- */
 let last = performance.now(), lastUI = 0, tokenTick = 0;
@@ -1157,7 +1457,7 @@ function frame(now) {
   if (now - lastUI > 100) { updateUI(); lastUI = now; }
   requestAnimationFrame(frame);
 }
-fitStage(); fitTrace(); readTokens(); reset();
+fitStage(); fitTrace(); readTokens(); reset(); renderChallenges(); applyUrlState();
 requestAnimationFrame(frame);
 })();
 </script>

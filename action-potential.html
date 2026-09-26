@@ -1,0 +1,1035 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action Potential Tug-of-War</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+
+:root{
+  color-scheme: light;
+  --page:#eef1f5; --panel:#ffffff; --stage:#f7f9fc; --stage-in:#f1f4f9; --stage-out:#fbfcfe;
+  --ink:#14181d; --ink-2:#4b5563; --muted:#8a919c; --line:#d9dee6; --line-2:#e9edf2;
+  --membrane:#aeb7c5; --membrane-core:#e2e7ee; --pore:#ffffff; --glyph:#ffffff; --ring:rgba(20,24,29,.28);
+  --ion-K:#4a3aa7; --ion-Na:#eb6834; --ion-Cl:#1baf7a; --ion-Ca:#e34948;
+  --ctrl:#f1f3f7; --ctrl-hover:#e5e9ef; --on:#14181d; --on-text:#ffffff;
+  --focus:#2a78d6; --tip:#14181d; --tip-text:#ffffff;
+  --ion: var(--ion-K);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --page:#0f1216; --panel:#171b21; --stage:#1c2129; --stage-in:#192028; --stage-out:#1f252e;
+    --ink:#eceff3; --ink-2:#b7bec8; --muted:#7f8792; --line:#2c333d; --line-2:#242a33;
+    --membrane:#5a6578; --membrane-core:#262d37; --pore:#0f1216; --glyph:#0f1216; --ring:rgba(255,255,255,.28);
+    --ion-K:#9085e9; --ion-Na:#d95926; --ion-Cl:#199e70; --ion-Ca:#e66767;
+    --ctrl:#1f252e; --ctrl-hover:#262d37; --on:#eceff3; --on-text:#0f1216;
+    --focus:#3987e5; --tip:#eceff3; --tip-text:#0f1216;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --page:#0f1216; --panel:#171b21; --stage:#1c2129; --stage-in:#192028; --stage-out:#1f252e;
+  --ink:#eceff3; --ink-2:#b7bec8; --muted:#7f8792; --line:#2c333d; --line-2:#242a33;
+  --membrane:#5a6578; --membrane-core:#262d37; --pore:#0f1216; --glyph:#0f1216; --ring:rgba(255,255,255,.28);
+  --ion-K:#9085e9; --ion-Na:#d95926; --ion-Cl:#199e70; --ion-Ca:#e66767;
+  --ctrl:#1f252e; --ctrl-hover:#262d37; --on:#eceff3; --on-text:#0f1216;
+  --focus:#3987e5; --tip:#eceff3; --tip-text:#0f1216;
+}
+body.ion-K{--ion:var(--ion-K)} body.ion-Na{--ion:var(--ion-Na)} body.ion-Cl{--ion:var(--ion-Cl)} body.ion-Ca{--ion:var(--ion-Ca)}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--page); color:var(--ink);
+  font-family:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric:tabular-nums}
+.wrap{max-width:1280px; margin:0 auto; padding:22px 20px 56px; display:grid; gap:18px}
+header.top{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap}
+h1{font-size:28px; line-height:1.15; margin:0; letter-spacing:-.01em; text-wrap:balance}
+.sub{color:var(--ink-2); max-width:64ch; margin:6px 0 0}
+.legend{display:flex; gap:14px; flex-wrap:wrap; color:var(--ink-2); font-size:13px}
+.legend span{display:inline-flex; align-items:center; gap:7px}
+.legend i{display:inline-block; width:26px; height:0; border-top:3px solid var(--ink)}
+.legend i.dash{border-top-style:dashed}
+.legend i.net{border-top-color:var(--ion); border-top-width:4px}
+
+.card{background:var(--panel); border:1px solid var(--line); border-radius:10px}
+.card > .hd{display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:12px 16px 0; flex-wrap:wrap}
+h2{font-size:12px; text-transform:uppercase; letter-spacing:.09em; color:var(--ink-2); margin:0; font-weight:700}
+.hint{font-size:13px; color:var(--muted)}
+
+.dash{display:grid; grid-template-columns:minmax(0,1fr) 296px 296px; gap:16px; align-items:start}
+.col{display:grid; gap:16px; min-width:0}
+@media (max-width:1180px){
+  .dash{grid-template-columns:minmax(0,1fr) 340px}
+  .col.left{grid-column:1; grid-row:1 / 3}
+  .col.mid{grid-column:2; grid-row:1}
+  .col.right{grid-column:2; grid-row:2}
+}
+@media (max-width:900px){
+  .dash{grid-template-columns:1fr}
+  .col.left,.col.mid,.col.right{grid-column:auto; grid-row:auto}
+}
+
+/* stage */
+.stage{padding:12px 16px 14px; display:grid; gap:10px}
+canvas#stage{width:100%; aspect-ratio:640/440; display:block; border-radius:8px; background:var(--stage); touch-action:none}
+body.simple .adv{display:none}
+.viewrow{display:flex; justify-content:space-between; align-items:center; padding:10px 16px}
+.meter{display:grid; gap:6px; padding-top:4px}
+.meter .mhd{display:flex; justify-content:space-between; font-size:12px; color:var(--muted)}
+.mrow{display:grid; gap:3px}
+.mrow .rowhd{display:flex; justify-content:space-between; align-items:baseline; font-size:13px}
+.mrow .rowhd b{font-weight:700}
+.mrow .rowhd .v{color:var(--ink-2)}
+.track{position:relative; height:12px; background:var(--line-2); border-radius:3px; overflow:hidden}
+.track .ctr{position:absolute; left:50%; top:0; bottom:0; width:2px; margin-left:-1px; background:var(--ink-2); opacity:.7}
+.bar{position:absolute; top:1px; bottom:1px; width:0; transition:width .12s linear}
+.bar.out{left:50%; border-radius:0 5px 5px 0}
+.bar.in{right:50%; border-radius:5px 0 0 5px}
+.bar.diff{background:repeating-linear-gradient(45deg, var(--ink) 0 3px, transparent 3px 7px); border:1px solid var(--ink); border-left-width:0}
+.bar.in.diff{border-left-width:1px; border-right-width:0}
+.bar.elec{background:var(--ink)}
+.bar.net{background:var(--ion)}
+.ticks{position:relative; height:16px; font-size:11px; color:var(--muted)}
+.ticks span{position:absolute; top:0; transform:translateX(-50%)}
+.ticks span.l{transform:none; left:0} .ticks span.r{transform:none; right:0}
+
+/* controls */
+.controls{display:grid}
+.group{display:grid; gap:8px; padding:12px 16px; border-top:1px solid var(--line-2)}
+.group:first-child{border-top:0}
+.group .lab{display:flex; justify-content:space-between; align-items:baseline; font-size:13px; color:var(--ink-2)}
+.group .lab b{color:var(--ink); font-weight:700}
+.seg{display:flex; background:var(--ctrl); border-radius:8px; padding:3px; gap:3px}
+.seg button{flex:1; border:0; background:transparent; color:var(--ink); padding:7px 6px; border-radius:6px; font:inherit; font-size:14px; font-weight:700; cursor:pointer; white-space:nowrap}
+.seg button:hover{background:var(--ctrl-hover)}
+.seg button[aria-checked="true"]{background:var(--on); color:var(--on-text)}
+.seg button .d{display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--c); margin-right:6px; vertical-align:-1px; box-shadow:0 0 0 1.5px var(--panel)}
+.sl{display:grid; grid-template-columns:1fr 92px; gap:10px; align-items:center}
+input[type=range]{width:100%; accent-color:var(--ink); margin:0}
+input[type=number]{font:inherit; font-size:13px; padding:5px 7px; border:1px solid var(--line); border-radius:6px; background:var(--panel); color:var(--ink); width:100%}
+.btnrow{display:flex; gap:8px; flex-wrap:wrap}
+.btn{font:inherit; font-size:14px; font-weight:700; border:1px solid var(--line); background:var(--panel); color:var(--ink); padding:8px 12px; border-radius:8px; cursor:pointer}
+.btn:hover{background:var(--ctrl)}
+.btn.primary{background:var(--on); color:var(--on-text); border-color:var(--on); min-width:88px}
+.btn.primary:hover{opacity:.9}
+.btn.link{border:0; padding:0; background:none; color:var(--ink-2); font-weight:400; font-size:13px; text-decoration:underline; text-underline-offset:3px}
+button:focus-visible, input:focus-visible, [tabindex]:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
+.keys{font-size:12px; color:var(--muted)}
+.keys kbd{font-family:inherit; border:1px solid var(--line); border-bottom-width:2px; border-radius:4px; padding:0 5px; font-size:11px}
+
+/* readouts */
+.readouts{display:grid; grid-template-columns:1fr}
+.ro{padding:12px 16px; border-top:1px solid var(--line-2)}
+.ro .k{font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-2); font-weight:700}
+.ro .big{font-size:28px; font-weight:600; line-height:1.15; margin-top:2px; white-space:nowrap}
+.ro .big small{font-size:14px; font-weight:500; margin-left:5px; color:var(--ink-2)}
+.ro .note{font-size:13px; color:var(--ink-2); margin-top:2px; min-height:1.4em}
+.ro.wide{grid-column:1 / -1; border-right:0}
+.swatch{display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--ion); vertical-align:-1px; margin-left:6px}
+
+/* row 2 */
+.tracecard{padding:12px 16px 14px; display:grid; gap:8px}
+.tracecard .hd{padding:0}
+canvas#trace{width:100%; height:170px; display:block; border-radius:6px; cursor:crosshair}
+.frow{display:grid; grid-template-columns:78px 1fr 84px; gap:10px; align-items:center; font-size:14px}
+.frow .fb{height:10px; background:var(--line-2); border-radius:3px; overflow:hidden}
+.frow .fb i{display:block; height:100%; width:0; background:var(--ion); border-radius:0 5px 5px 0; transition:width .15s linear}
+.frow .fv{text-align:right; color:var(--ink-2)}
+.flux .tot{font-size:13px; color:var(--ink-2); border-top:1px solid var(--line-2); padding-top:10px; display:grid; gap:2px}
+.flux .tot b{color:var(--ink)}
+
+/* row 3 */
+.row3{display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:stretch}
+@media (max-width:860px){.row3{grid-template-columns:1fr}}
+.eqcard, .cellcard{padding:12px 16px 16px; display:grid; gap:10px; align-content:start}
+.eqcard .hd, .cellcard .hd{padding:0}
+.eq{font-size:18px; line-height:1.6; overflow-x:auto}
+.eq .frac{display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; margin:0 4px; line-height:1.25}
+.eq .frac > span:first-child{border-bottom:1.5px solid currentColor; padding:0 5px}
+.eq .frac > span:last-child{padding:0 5px}
+.eq sub{font-size:.7em}
+.eq .res{font-weight:600}
+.cellcard p{margin:0}
+.cellcard .diam{display:flex; gap:10px; align-items:center; font-size:13px; color:var(--ink-2)}
+.cellcard .diam input{width:74px}
+.cellcard .num b{font-weight:600}
+
+/* row 4 */
+.row4{display:grid; grid-template-columns:minmax(0,1fr) 380px; gap:18px; align-items:start}
+@media (max-width:960px){.row4{grid-template-columns:1fr}}
+.prose{padding:16px 20px 20px; max-width:none}
+.prose .hd{padding:0 0 6px}
+.prose p{margin:0 0 12px; max-width:66ch}
+.prose h3{font-size:15px; margin:14px 0 4px; font-weight:700}
+.prose h3:first-of-type{margin-top:8px}
+.tries{padding:16px 20px 18px}
+.tries .hd{padding:0 0 6px}
+.tries ol{margin:0; padding-left:22px; display:grid; gap:9px; font-size:14px}
+.tries li::marker{color:var(--ink-2); font-weight:700}
+footer{font-size:13px; color:var(--muted); max-width:90ch}
+footer p{margin:0 0 6px}
+.tip{position:absolute; pointer-events:none; background:var(--tip); color:var(--tip-text); font-size:12px; padding:4px 7px; border-radius:5px; white-space:nowrap; transform:translate(-50%,-130%); display:none}
+.tracewrap{position:relative}
+.narr{margin:0; padding:9px 12px; border-left:3px solid var(--ion); background:var(--ctrl); border-radius:0 6px 6px 0; font-size:14px; line-height:1.45; min-height:4.9em}
+.narr .nk{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-2); font-weight:700; margin-right:6px}
+.mfoot{font-size:12px; color:var(--muted); margin:0}
+.crow{display:grid; grid-template-columns:auto 1fr 60px; gap:8px; align-items:center; font-size:13px}
+.crow b{font-weight:700; white-space:nowrap}
+.crow input[type=number]{font-size:12px; padding:4px 6px}
+.crow2{display:grid; grid-template-columns:auto 1fr; gap:10px; align-items:center; font-size:13px}
+.crow2 b{font-weight:700}
+.viewrow h2{font-size:12px}
+.vmset{display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; margin-top:8px}
+.btn.small{padding:5px 10px; font-size:13px}
+.btn.small[aria-pressed="true"]{background:var(--on); color:var(--on-text); border-color:var(--on)}
+.metercard{padding:0 16px 12px}
+.metercard > .hd{padding:12px 0 6px}
+.flux{display:grid; gap:10px; padding:0 16px 14px}
+.flux > .hd{padding:12px 0 0}
+.ro:first-child{border-top:0}
+.legend i.ionsw{width:12px; height:12px; border-radius:50%; background:var(--ion); border:0}
+.callout{border-left:3px solid var(--ink); background:var(--ctrl); padding:10px 12px; border-radius:0 6px 6px 0; margin:0 0 12px; max-width:66ch}
+.callout p{margin:0; max-width:none}
+.rightcol{display:grid; gap:18px}
+.gloss{padding:16px 20px 18px}
+.gloss .hd{padding:0 0 8px}
+.gloss dl{margin:0; display:grid; gap:9px; font-size:14px}
+.gloss dt{font-weight:700}
+.gloss dd{margin:0; color:var(--ink-2)}
+@media (prefers-reduced-motion:reduce){.bar, .frow .fb i{transition:none}}
+.legend i.ionsw{background:var(--c, var(--ion))}
+.legend i.pumpsw{width:16px; height:8px; border:0; border-radius:2px; background:var(--ink)}
+.narr{border-left-color:var(--ink)}
+canvas#stage{aspect-ratio:640/480}
+.tray{display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:13px}
+.tray .hint{font-size:12px}
+.chip{display:inline-flex; align-items:center; gap:6px; font:inherit; font-size:13px; font-weight:700; border:1px solid var(--line); background:var(--panel); color:var(--ink); padding:5px 10px; border-radius:999px; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none}
+.chip:hover{background:var(--ctrl)}
+.chip i{display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--c)}
+.chip i.pumpi{width:14px; height:8px; border-radius:2px; background:var(--ink)}
+.ghost{position:fixed; left:0; top:0; pointer-events:none; z-index:50; display:none; padding:5px 10px; border-radius:999px; background:var(--on); color:var(--on-text); font-size:13px; font-weight:700; transform:translate(-50%,-50%); white-space:nowrap}
+.step{display:grid; grid-template-columns:12px 44px 30px 34px 30px; gap:6px; align-items:center; font-size:14px}
+.step i{display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--c)}
+.step b{text-align:center; font-size:15px}
+.sb{width:30px; height:28px; border:1px solid var(--line); background:var(--panel); color:var(--ink); border-radius:7px; font:inherit; font-size:16px; font-weight:700; cursor:pointer; line-height:1; padding:0}
+.sb:hover{background:var(--ctrl)}
+.cgrid{display:grid; grid-template-columns:auto 1fr 1fr; gap:6px 8px; align-items:center; font-size:13px}
+.cgrid span i{display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--c); margin-right:5px}
+.cgrid input{font-size:12px; padding:4px 6px}
+.cgrid .h{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em}
+.elist{display:grid; grid-template-columns:auto 1fr; gap:3px 10px; align-items:baseline; margin-top:4px; font-size:14px}
+.elist i{display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--c); margin-right:6px; vertical-align:-1px}
+.elist b{font-weight:600; font-size:16px; text-align:right; white-space:nowrap}
+.mrow .sw{display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--c); margin-right:5px; vertical-align:-1px}
+.mrow .rowhd .hint{font-weight:400; margin-left:4px}
+.bar.K{background:var(--ion-K)} .bar.Na{background:var(--ion-Na)} .bar.Cl{background:var(--ion-Cl)} .bar.pump{background:var(--ink)}
+.eqcard{padding:12px 16px 14px; display:grid; gap:8px}
+.eqcard .hd{padding:0}
+.eq{font-size:15px; line-height:1.6}
+.link{color:var(--ink-2)}
+.legend i.leaksw{width:12px; height:12px; border-radius:50%; background:var(--membrane); border:0}
+.phases{display:flex; flex-wrap:wrap; gap:5px; align-items:center}
+.phases .ph{font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); padding:2px 7px; border-radius:999px; border:1px solid var(--line-2)}
+.phases .ph.on{background:var(--on); color:var(--on-text); border-color:var(--on)}
+.phases .lbl{font-size:12px; color:var(--muted); margin-right:2px}
+.gates{display:grid; gap:6px; margin-top:6px}
+.gate{display:grid; grid-template-columns:1fr 44px; gap:8px; align-items:center; font-size:12px}
+.gate .gt{display:flex; justify-content:space-between; color:var(--ink-2)}
+.gate .gb{grid-column:1 / -1; height:8px; background:var(--line-2); border-radius:3px; overflow:hidden}
+.gate .gb i{display:block; height:100%; width:0; border-radius:3px}
+.gate .gb i.Na{background:var(--ion-Na)} .gate .gb i.h{background:var(--ink)} .gate .gb i.K{background:var(--ion-K)}
+.stimbtn{font-size:15px; padding:10px 16px}
+.stimbtn:active{transform:translateY(1px)}
+.tog{display:flex; gap:8px}
+.tog button{flex:1; font:inherit; font-size:13px; font-weight:700; border:1px solid var(--line); background:var(--panel); color:var(--ink); padding:7px 8px; border-radius:8px; cursor:pointer}
+.tog button[aria-pressed="true"]{background:var(--on); color:var(--on-text); border-color:var(--on)}
+.bar.L{background:var(--membrane)} .bar.stim{background:var(--ink)}
+canvas#trace{height:230px}
+.series{display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 16px; font-size:13px}
+.series .brand{font-size:11px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--muted)}
+.series a{color:var(--ink-2); text-decoration:none; border-bottom:2px solid transparent; padding-bottom:1px}
+.series a:hover{border-bottom-color:var(--line)}
+.series a[aria-current="page"]{color:var(--ink); font-weight:700; border-bottom-color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="series" aria-label="NeuroSim demos"><span class="brand">NeuroSim</span><a href="https://torryscott.github.io/NeuroSim/nernst-tug-of-war.html">1 · Nernst</a><a href="https://torryscott.github.io/NeuroSim/resting-potential.html">2 · Resting potential</a><a href="https://torryscott.github.io/NeuroSim/action-potential.html" aria-current="page">3 · Action potential</a></nav>
+  <header class="top">
+    <div>
+      <h1>Action Potential Tug-of-War</h1>
+      <p class="sub">The same membrane, now with channels whose gates open and close with the voltage. One push past threshold, and Na⁺ then K⁺ take turns dragging the voltage up and back down.</p>
+    </div>
+    <div class="legend" aria-label="Legend">
+      <span><i class="ionsw" style="--c:var(--ion-Na)"></i> Na⁺ · voltage-gated Na⁺ channel</span>
+      <span><i class="ionsw" style="--c:var(--ion-K)"></i> K⁺ · voltage-gated K⁺ channel</span>
+      <span><i class="leaksw"></i> leak channel</span>
+    </div>
+  </header>
+
+  <section class="dash">
+    <div class="col left">
+      <div class="card stage">
+        <canvas id="stage" role="img" aria-label="A patch of membrane with voltage-gated sodium channels, voltage-gated potassium channels and leak channels. Sodium and potassium ions jiggle on both sides. Above the box, a voltage axis shows the equilibrium potentials and the pull each conductance exerts on the membrane voltage. Gates on the channel icons swing open and shut as the voltage changes."></canvas>
+        <div class="phases" id="phases" aria-label="Phase of the action potential"><span class="lbl">Phase</span></div>
+        <p class="narr" id="narr" aria-live="off"><span class="nk">What is happening</span><span id="narrText"></span></p>
+      </div>
+      <div class="card tracecard">
+        <div class="hd"><h2>Voltage and conductances over time</h2><span class="hint">top: V<sub>m</sub> · bottom: how open the Na⁺ and K⁺ channels are · last 25 ms</span></div>
+        <div class="tracewrap"><canvas id="trace" role="img" aria-label="Membrane voltage against time in milliseconds, with the sodium and potassium conductances in a panel below."></canvas><div class="tip mono" id="tip"></div></div>
+      </div>
+    </div>
+
+    <div class="col mid">
+      <div class="card controls">
+        <div class="viewrow"><h2>Controls</h2><button class="btn link" id="viewToggle">Show more</button></div>
+        <div class="group">
+          <button class="btn primary stimbtn" id="stimBtn">Stimulate</button>
+          <div class="crow"><b>Strength</b><input type="range" id="rStim" min="0" max="40" step="1" value="22" aria-label="Stimulus strength"><span class="mono" id="stimLbl" style="text-align:right">22</span></div>
+          <div class="hint" id="stimHint">a 1 ms pulse of current · threshold is about 15</div>
+        </div>
+        <div class="group">
+          <div class="lab"><b>Blockers</b><span>toxins that plug one channel type</span></div>
+          <div class="tog"><button id="ttxBtn" aria-pressed="false">TTX · blocks Na⁺</button><button id="teaBtn" aria-pressed="false">TEA · blocks K⁺</button></div>
+        </div>
+        <div class="group">
+          <div class="lab"><b>Slow motion</b><span id="speedHint">1 ms of neuron time per second</span></div>
+          <div class="seg" role="radiogroup" aria-label="Slow motion" id="speedSeg">
+            <button role="radio" aria-checked="false" data-speed="0.25">×4000</button>
+            <button role="radio" aria-checked="true" data-speed="1">×1000</button>
+            <button role="radio" aria-checked="false" data-speed="4">×250</button>
+            <button role="radio" aria-checked="false" data-speed="20">×50</button>
+          </div>
+        </div>
+        <div class="group adv">
+          <div class="lab"><b>Pulse pair</b><span>for the refractory period</span></div>
+          <div class="crow"><b>Gap</b><input type="range" id="rGap" min="1" max="20" step="0.5" value="6" aria-label="Interval between the two pulses in milliseconds"><span class="mono" id="gapLbl" style="text-align:right">6 ms</span></div>
+          <div class="crow"><b>Pulse</b><input type="range" id="rDur" min="0.2" max="5" step="0.1" value="1" aria-label="Pulse duration in milliseconds"><span class="mono" id="durLbl" style="text-align:right">1.0 ms</span></div>
+          <button class="btn" id="pairBtn">Fire two pulses</button>
+        </div>
+        <div class="group adv">
+          <div class="lab"><b>Channel density</b><span>percent of normal</span></div>
+          <div class="crow"><b>Na⁺</b><input type="range" id="rGNa" min="0" max="150" step="5" value="100" aria-label="Sodium channel density"><span class="mono" id="gNaLbl" style="text-align:right">100%</span></div>
+          <div class="crow"><b>K⁺</b><input type="range" id="rGK" min="0" max="150" step="5" value="100" aria-label="Potassium channel density"><span class="mono" id="gKLbl" style="text-align:right">100%</span></div>
+          <div class="lab"><b>Gate speed</b><span>kinetics relative to the squid axon at 6 °C</span></div>
+          <div class="seg" role="radiogroup" aria-label="Gate kinetics" id="phiSeg">
+            <button role="radio" aria-checked="false" data-phi="1">1×</button>
+            <button role="radio" aria-checked="true" data-phi="2">2×</button>
+            <button role="radio" aria-checked="false" data-phi="3">3×</button>
+          </div>
+        </div>
+        <div class="group">
+          <div class="btnrow">
+            <button class="btn" id="play">Pause</button>
+            <button class="btn" id="stepBtn">Step 0.05 ms</button>
+            <button class="btn" id="reset">Reset</button>
+          </div>
+          <div class="keys"><kbd>S</kbd> stimulate &nbsp; <kbd>space</kbd> play / pause &nbsp; <kbd>.</kbd> step &nbsp; <kbd>R</kbd> reset</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col right">
+      <div class="card readouts">
+        <div class="ro">
+          <div class="k">Membrane voltage V<sub>m</sub></div>
+          <div class="big mono" id="roVm">−73.0 mV</div>
+          <div class="note" id="roVmNote">inside relative to outside</div>
+          <div class="vmset"><input type="range" id="rVm" min="-120" max="80" step="1" value="-73" aria-label="Set the membrane voltage in millivolts"><button class="btn small" id="holdBtn" aria-pressed="false">Hold</button></div>
+          <div class="hint">drag to set V<sub>m</sub> · Hold keeps it there, a voltage clamp</div>
+        </div>
+        <div class="ro">
+          <div class="k">Channel gates</div>
+          <div class="gates">
+            <div class="gate"><span class="gt"><span>Na⁺ activation gate <b>m</b></span><span class="mono" id="gm">0.05</span></span><span class="gb"><i class="Na" id="bm"></i></span></div>
+            <div class="gate"><span class="gt"><span>Na⁺ inactivation plug <b>h</b> (1 = clear)</span><span class="mono" id="gh">0.60</span></span><span class="gb"><i class="h" id="bh"></i></span></div>
+            <div class="gate"><span class="gt"><span>K⁺ gate <b>n</b></span><span class="mono" id="gn">0.30</span></span><span class="gb"><i class="K" id="bn"></i></span></div>
+          </div>
+          <div class="note">a channel conducts when all its gates are open: Na⁺ needs m³·h, K⁺ needs n⁴</div>
+        </div>
+      </div>
+      <div class="card metercard">
+        <div class="hd"><h2>Tug of war on V<sub>m</sub></h2><span class="hint">pull = current, µA/cm²</span></div>
+        <div class="meter" aria-label="Pulls on the membrane voltage">
+          <div class="mhd"><span>◀ pulls down</span><span></span><span>pulls up ▶</span></div>
+          <div class="mrow"><div class="rowhd"><b><i class="sw" style="--c:var(--ion-Na)"></i>Na⁺<span class="hint" id="rNa"></span></b><span class="v mono" id="vNa">—</span></div><div class="track"><div class="ctr"></div><div class="bar Na" id="bNa"></div></div></div>
+          <div class="mrow"><div class="rowhd"><b><i class="sw" style="--c:var(--ion-K)"></i>K⁺<span class="hint" id="rK"></span></b><span class="v mono" id="vK">—</span></div><div class="track"><div class="ctr"></div><div class="bar K" id="bK"></div></div></div>
+          <div class="mrow"><div class="rowhd"><b><i class="sw" style="--c:var(--membrane)"></i>Leak<span class="hint" id="rL"></span></b><span class="v mono" id="vL">—</span></div><div class="track"><div class="ctr"></div><div class="bar L" id="bL"></div></div></div>
+          <div class="mrow"><div class="rowhd"><b><i class="sw" style="--c:var(--ink)"></i>Stimulus</b><span class="v mono" id="vS">—</span></div><div class="track"><div class="ctr"></div><div class="bar stim" id="bS"></div></div></div>
+          <p class="mfoot">Each pull is (how open that channel type is) × (distance from its own E). The gates change how open the channels are, so the pulls change from moment to moment.</p>
+        </div>
+      </div>
+      <div class="card eqcard adv">
+        <div class="hd"><h2>Hodgkin–Huxley, live</h2></div>
+        <div class="eq mono" id="eq"></div>
+        <p class="hint" style="margin:0">g̅ is the conductance with every channel open; m, h and n are the fractions of each gate type that are open, and each follows the voltage with its own delay.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="row4">
+    <div class="card prose">
+      <div class="hd"><h2>What makes an action potential?</h2></div>
+      <p><b>The one-sentence version.</b> An action potential is what happens when channels whose gates respond to voltage are added to the resting membrane: a small push past threshold opens Na⁺ channels, Na⁺ inflow opens more, the voltage shoots toward E<sub>Na</sub>, and then slower changes, Na⁺ channels plugging themselves and K⁺ channels opening, drag it back to rest and briefly below.</p>
+      <h3>Gates that listen to the voltage</h3>
+      <p>Leak channels are always open. The channels that make a spike have gates that swing with the membrane voltage. A voltage-gated Na⁺ channel has two: a fast activation gate that opens when the membrane depolarizes, and a slower inactivation plug that swings into the pore shortly after. A voltage-gated K⁺ channel has one gate that also opens on depolarization, but slowly. Those three speeds, fast open, slower plug, slow K⁺, are the whole story.</p>
+      <h3>Threshold is where Na⁺ inflow starts to win</h3>
+      <p>A weak stimulus lifts V<sub>m</sub> a little, a few Na⁺ gates open, but the K⁺ and leak pulls are stronger and V<sub>m</sub> slides back. Push a little harder and enough Na⁺ channels open that the Na⁺ inflow itself depolarizes the membrane, which opens more Na⁺ channels. Once that loop closes, the stimulus no longer matters: the spike runs on its own, which is why it is all-or-none.</p>
+      <h3>Why the peak stops short of E<sub>Na</sub></h3>
+      <p>At the top, Na⁺ has most of the votes and V<sub>m</sub> heads for E<sub>Na</sub>. It never arrives, because two slower things catch up: the inactivation plugs close the Na⁺ channels, and the K⁺ gates open. K⁺, now with the most votes and far from its E, pulls V<sub>m</sub> back down.</p>
+      <h3>Undershoot and recovery</h3>
+      <p>The K⁺ gates are slow to close, so for a few milliseconds the membrane is more permeable to K⁺ than at rest and V<sub>m</sub> dips toward E<sub>K</sub>. Meanwhile the Na⁺ plugs clear only after the membrane has repolarized. Until they do, a new stimulus cannot fire a full spike: the refractory period. That is what keeps spikes from running backwards along an axon.</p>
+      <div class="callout"><p><b>Common mix-ups.</b> The pump does not repolarize the membrane; K⁺ leaving through open K⁺ channels does that, within a millisecond. And only a tiny fraction of the ions cross during a spike, so the concentrations do not change; a neuron can fire thousands of times before the pump’s work is noticeable.</p></div>
+      <h3>Two toxins, one lesson each</h3>
+      <p>Tetrodotoxin (TTX), from pufferfish, plugs voltage-gated Na⁺ channels: stimulate, and all you get is a passive bump. Tetraethylammonium (TEA) blocks voltage-gated K⁺ channels: the spike still fires, because Na⁺ makes the upstroke, but it lasts far longer, because repolarization is left to Na⁺ inactivation and the leak. Together they show which ion does which job.</p>
+    </div>
+    <div class="rightcol">
+      <div class="card gloss">
+        <div class="hd"><h2>Words you will see</h2></div>
+        <dl>
+          <dt>Voltage-gated channel</dt><dd>A channel whose gates open or close depending on the membrane voltage.</dd>
+          <dt>Activation and inactivation</dt><dd>Two different gates on the Na⁺ channel. Activation opens it fast on depolarization; inactivation plugs it a moment later and clears only after repolarization.</dd>
+          <dt>Threshold</dt><dd>The depolarization at which Na⁺ inflow starts to outrun the K⁺ and leak outflow, so the spike becomes self-sustaining.</dd>
+          <dt>Depolarize, repolarize, hyperpolarize</dt><dd>Move V<sub>m</sub> toward zero, back toward rest, or beyond rest to more negative values.</dd>
+          <dt>Overshoot and undershoot</dt><dd>The part of the spike above 0 mV, and the dip below rest afterwards.</dd>
+          <dt>Refractory period</dt><dd>The time after a spike when another cannot be fired at all (absolute) or only by a stronger stimulus (relative).</dd>
+          <dt>All-or-none</dt><dd>Below threshold nothing; above it a full-sized spike, the same size whatever the stimulus.</dd>
+          <dt>Hodgkin–Huxley model</dt><dd>The 1952 equations, fitted to squid axon, that describe the gates and reproduce the spike. This page runs them.</dd>
+        </dl>
+      </div>
+      <div class="card tries">
+        <div class="hd"><h2>Try this in class</h2></div>
+        <ol>
+          <li>Set the strength to 10 and stimulate. Watch V<sub>m</sub> bump and slide back. Try 15, then 22. What changes at threshold?</li>
+          <li>At ×4000, watch one spike and name the order of events: which gate opens first, which closes first?</li>
+          <li>Why does the peak stop short of E<sub>Na</sub> (+61 mV)?</li>
+          <li>Why does V<sub>m</sub> dip below rest before coming back?</li>
+          <li>Turn the strength up to 40. Is the spike any bigger?</li>
+          <li>Block Na⁺ with TTX and stimulate. What is left? Block K⁺ with TEA instead. Why does the spike last so long, and what brings it down at all?</li>
+          <li>Show more, then fire two pulses 4 ms apart, then 8, then 15. When does the second spike appear? Which gate sets the limit?</li>
+          <li>Set V<sub>m</sub> to −40 mV and press Hold. Watch the conductance trace: Na⁺ first and brief, K⁺ later and lasting. This is the voltage-clamp experiment Hodgkin and Huxley did.</li>
+        </ol>
+        <p class="hint" style="margin:8px 0 0">Items 7 and 8 use the controls behind “Show more”.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p><b>About the model.</b> The membrane runs the Hodgkin–Huxley equations with their original squid-axon channel densities and gate kinetics, sped up 2× toward body temperature, and with this series’ equilibrium potentials (E<sub>Na</sub> +61 mV, E<sub>K</sub> −89 mV, leak −70 mV). Threshold, the spike shape, the undershoot and the refractory period are not scripted; they emerge from the equations. The gates drawn on each channel show the average state of that channel type. Ions on screen are a small sample of the traffic, and the charge marks are cartoon-scaled. Part 3 of the NeuroSim series, after <a class="link" href="https://torryscott.github.io/NeuroSim/nernst-tug-of-war.html">Nernst Tug-of-War</a> and <a class="link" href="https://torryscott.github.io/NeuroSim/resting-potential.html">Resting Potential Tug-of-War</a>.</p>
+  </footer>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const TAU = Math.PI * 2, MINUS = '−';
+
+const IONS = {
+  K:  { key:'K',  sym:'K⁺',  z: 1, cin:140, cout:5,   glyph:'+', sub:'K' },
+  Na: { key:'Na', sym:'Na⁺', z: 1, cin:15,  cout:145, glyph:'+', sub:'Na' },
+};
+const KEYS = ['K', 'Na'];
+const HH = { gNa: 120, gK: 36, gL: 0.3, ENa: 60.6, EK: -89.1, EL: -70, C: 1 };   // mS/cm², mV, µF/cm²
+const DT = 0.01;                       // ms per integration step
+const DOT_PER_MM = 0.55, K_VIS = 0.05; // ions on screen per mM; drawn crossings per (µA/cm² × ms of neuron time)
+const NSLOT = 15;
+const LAYOUT = ['Na', 'K', 'L', 'Na', 'K', 'Na', 'L', 'K', 'Na', 'L', 'K', 'Na'];
+
+const S = {
+  V: -73, m: 0.05, h: 0.6, n: 0.3, t: 0, playing: true, msPerSec: 1,
+  stimAmp: 22, stimDur: 1, gap: 6, pulses: [], ttx: false, tea: false, gNaPct: 100, gKPct: 100, phi: 2,
+  mode: 'free', clampV: -73, trace: [],
+};
+let REST = -73, restGates = { m: 0.05, h: 0.6, n: 0.3 };
+function rates(V) {
+  const am = Math.abs(V + 40) < 1e-6 ? 1 : 0.1 * (V + 40) / (1 - Math.exp(-(V + 40) / 10)), bm = 4 * Math.exp(-(V + 65) / 18);
+  const ah = 0.07 * Math.exp(-(V + 65) / 20), bh = 1 / (1 + Math.exp(-(V + 35) / 10));
+  const an = Math.abs(V + 55) < 1e-6 ? 0.1 : 0.01 * (V + 55) / (1 - Math.exp(-(V + 55) / 10)), bn = 0.125 * Math.exp(-(V + 65) / 80);
+  return { am, bm, ah, bh, an, bn };
+}
+const gNa = () => HH.gNa * (S.ttx ? 0 : S.gNaPct / 100) * S.m ** 3 * S.h;
+const gK = () => HH.gK * (S.tea ? 0 : S.gKPct / 100) * S.n ** 4;
+const stimNow = (t = S.t) => S.pulses.reduce((a, p) => a + (t >= p.t0 && t < p.t1 ? p.amp : 0), 0);
+function currents() {                  // µA/cm², outward positive; the stimulus is injected inward, so it pulls Vm up
+  const V = S.V;
+  return { Na: gNa() * (V - HH.ENa), K: gK() * (V - HH.EK), L: HH.gL * (V - HH.EL), stim: stimNow() };
+}
+function stepHH(dt, free = true) {
+  const r = rates(S.V), p = S.phi;
+  S.m = clamp(S.m + p * (r.am * (1 - S.m) - r.bm * S.m) * dt, 0, 1);
+  S.h = clamp(S.h + p * (r.ah * (1 - S.h) - r.bh * S.h) * dt, 0, 1);
+  S.n = clamp(S.n + p * (r.an * (1 - S.n) - r.bn * S.n) * dt, 0, 1);
+  if (free) { const I = currents(); S.V += (-(I.Na + I.K + I.L) + I.stim) / HH.C * dt; }
+  S.t += dt;
+}
+function findRest() {                  // settle the membrane with nothing happening
+  const keep = { V: S.V, m: S.m, h: S.h, n: S.n, t: S.t, pulses: S.pulses, mode: S.mode };
+  S.V = -70; S.m = 0.05; S.h = 0.6; S.n = 0.3; S.pulses = []; S.mode = 'free';
+  const hu = holdUntil; holdUntil = 0;
+  for (let i = 0; i < 300 / DT; i++) stepHH(DT, true);
+  REST = S.V; restGates = { m: S.m, h: S.h, n: S.n };
+  Object.assign(S, keep); holdUntil = hu;
+}
+
+/* ---------- formatting ---------- */
+const fmtSigned = (v, d = 1) => { const r = Math.abs(v).toFixed(d); return (parseFloat(r) === 0 ? '' : v < 0 ? MINUS : '+') + r; };
+const fmtCshort = c => parseFloat(c.toPrecision(3)).toString();
+const fmtI = i => Math.abs(i) >= 10 ? Math.abs(i).toFixed(0) : Math.abs(i) >= 1 ? Math.abs(i).toFixed(1) : Math.abs(i).toFixed(2);
+const f2 = v => v.toFixed(2);
+
+/* ---------- theme tokens ---------- */
+const T = { ion: {} };
+function readTokens() {
+  const cs = getComputedStyle(document.body);
+  const g = k => cs.getPropertyValue(k).trim();
+  T.stage = g('--stage'); T.stageIn = g('--stage-in'); T.stageOut = g('--stage-out');
+  T.ink = g('--ink'); T.ink2 = g('--ink-2'); T.muted = g('--muted'); T.line = g('--line'); T.line2 = g('--line-2');
+  T.membrane = g('--membrane'); T.core = g('--membrane-core'); T.pore = g('--pore'); T.glyph = g('--glyph'); T.ring = g('--ring');
+  T.on = g('--on'); T.onText = g('--on-text');
+  for (const k of KEYS) T.ion[k] = g('--ion-' + k);
+  T.ion.L = T.membrane;
+}
+const hexToRgba = (hex, a) => {
+  const h = hex.replace('#', '');
+  const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+};
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- geometry ---------- */
+const W = 640, H = 480, mL = 296, mR = 344, mx = 320, LANE = 112;
+const slotY = k => 124 + k * 24;
+const REG = {
+  in:  { x0: 14, x1: mL - 12, y0: LANE + 10, y1: H - 14 },
+  out: { x0: mR + 12, x1: W - 14, y0: LANE + 10, y1: H - 14 },
+};
+const mouth = (side, y) => ({ x: side === 'in' ? mL - 13 : mR + 13, y });
+const AX0 = 60, AX1 = 580, AXY = 90, VMIN = -120, VMAX = 80;
+const xOfV = v => AX0 + (clamp(v, VMIN, VMAX) - VMIN) / (VMAX - VMIN) * (AX1 - AX0);
+const CROWD_R = 5.5;
+const bulk = { in: [], out: [] };
+const transit = [];
+const conc = (k, side) => side === 'in' ? IONS[k].cin : IONS[k].cout;
+
+/* ---------- crowds ---------- */
+const targetCount = (side, k) => Math.round(conc(k, side) * DOT_PER_MM);
+const farEdge = side => side === 'in' ? REG.in.x0 - 14 : REG.out.x1 + 14;
+function newDot(side, k, fromEdge) {
+  const r = REG[side], y = r.y0 + Math.random() * (r.y1 - r.y0);
+  if (!fromEdge) return { ion: k, x: r.x0 + Math.random() * (r.x1 - r.x0), y, vx: 0, vy: 0, state: 'in', drift: 0 };
+  return { ion: k, x: farEdge(side), y, vx: 0, vy: 0, state: 'entering', drift: side === 'in' ? 1 : -1 };
+}
+function buildDots() {
+  bulk.in.length = 0; bulk.out.length = 0; transit.length = 0;
+  for (const side of ['in', 'out']) for (const k of KEYS) for (let i = 0, n = targetCount(side, k); i < n; i++) bulk[side].push(newDot(side, k, false));
+}
+const recTimer = {};
+function reconcile(dt) {
+  for (const side of ['in', 'out']) for (const k of KEYS) {
+    const id = side + k; recTimer[id] = (recTimer[id] || 0) + dt;
+    const arr = bulk[side], target = targetCount(side, k);
+    const counted = arr.filter(d => d.ion === k && d.state !== 'leaving').length + transit.filter(t => t.ion === k && t.dst === side).length;
+    const diff = target - counted;
+    let n = 0;
+    if (Math.abs(diff) >= 6) n = Math.min(3, Math.abs(diff)); else if (Math.abs(diff) >= 2 && recTimer[id] > 1.2) n = 1;
+    if (!n) continue;
+    recTimer[id] = 0;
+    if (diff > 0) for (let i = 0; i < n; i++) arr.push(newDot(side, k, true));
+    else {
+      const settled = arr.filter(d => d.ion === k && d.state === 'in');
+      const far = side === 'in' ? d => d.x : d => -d.x;
+      settled.sort((a, b) => far(a) - far(b));
+      for (let i = 0; i < Math.min(n, settled.length); i++) { settled[i].state = 'leaving'; settled[i].drift = side === 'in' ? -1 : 1; }
+    }
+  }
+}
+function updateDots(dt) {
+  const jig = reduceMotion ? 0 : 1, f = dt * 60;
+  for (const side of ['in', 'out']) {
+    const r = REG[side], arr = bulk[side];
+    for (let i = arr.length - 1; i >= 0; i--) {
+      const d = arr[i];
+      if (d.state === 'in') {
+        d.vx += (Math.random() - 0.5) * 0.7 * jig; d.vy += (Math.random() - 0.5) * 0.7 * jig;
+        d.vx *= 0.96; d.vy *= 0.96;
+        if (d.goal) {
+          const gx = d.goal.x - d.x, gy = d.goal.y - d.y, dist = Math.hypot(gx, gy);
+          if (dist < 12) d.goal = null; else { d.vx = gx / dist * 1.1 + d.vx * 0.3; d.vy = gy / dist * 1.1 + d.vy * 0.3; }
+        }
+        if (d.y < LANE + 50 && (d.x < 128 || d.x > W - 128)) d.vy += 0.35;
+        const sp = Math.hypot(d.vx, d.vy); if (sp > 1.8) { d.vx *= 1.8 / sp; d.vy *= 1.8 / sp; }
+        d.x += d.vx * f; d.y += d.vy * f;
+        if (d.x < r.x0) { d.x = r.x0; d.vx = Math.abs(d.vx); } else if (d.x > r.x1) { d.x = r.x1; d.vx = -Math.abs(d.vx); }
+      } else {
+        d.vx = d.drift * (d.state === 'leaving' ? 2.6 : 1.3); d.vy += (Math.random() - 0.5) * 0.3 * jig; d.vy *= 0.9;
+        d.x += d.vx * f; d.y += d.vy * f;
+        if (d.state === 'entering' && ((d.drift > 0 && d.x > r.x0 + 24) || (d.drift < 0 && d.x < r.x1 - 24))) { d.state = 'in'; d.drift = 0; d.vx *= 0.5; }
+        if (d.state === 'leaving' && (d.x < r.x0 - 14 || d.x > r.x1 + 14)) { arr.splice(i, 1); continue; }
+      }
+      if (d.y < r.y0) { d.y = r.y0; d.vy = Math.abs(d.vy); } else if (d.y > r.y1) { d.y = r.y1; d.vy = -Math.abs(d.vy); }
+    }
+  }
+}
+function takeNearest(arr, m, ok) {
+  let best = -1, bd = Infinity;
+  for (let i = 0; i < arr.length; i++) { const d = arr[i]; if (ok && !ok(d)) continue; const dd = Math.hypot(d.x - m.x, d.y - m.y); if (dd < bd) { bd = dd; best = i; } }
+  return best >= 0 ? arr.splice(best, 1)[0] : null;
+}
+function spawnCrossing(k, outward, slot) {
+  const src = outward ? 'in' : 'out', dst = outward ? 'out' : 'in', y = slotY(slot), m = mouth(src, y);
+  let d = takeNearest(bulk[src], m, x => x.ion === k && x.state === 'in');
+  if (!d) d = { x: src === 'in' ? REG.in.x0 + 10 : REG.out.x1 - 10, y: clamp(y + (Math.random() - 0.5) * 100, REG.in.y0, REG.in.y1) };
+  const dur = 0.2 + Math.hypot(d.x - m.x, d.y - m.y) / 260;
+  transit.push({ ion: k, src, dst, x0: d.x, y0: d.y, x: d.x, y: d.y, t: 0, phase: 0, dur, outward, slot });
+}
+const ease = p => p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+function updateTransit(dt) {
+  for (let i = transit.length - 1; i >= 0; i--) {
+    const tr = transit[i]; tr.t += dt;
+    const y = slotY(tr.slot), ms = mouth(tr.src, y), md = mouth(tr.dst, y);
+    if (tr.phase === 0) {
+      const p = Math.min(1, tr.t / tr.dur), e = ease(p);
+      tr.x = tr.x0 + (ms.x - tr.x0) * e; tr.y = tr.y0 + (ms.y - tr.y0) * e;
+      if (p >= 1) { tr.phase = 1; tr.t = 0; }
+    } else {
+      const p = Math.min(1, tr.t / 0.35);
+      tr.x = ms.x + (md.x - ms.x) * ease(p); tr.y = y;
+      if (p >= 1) {
+        transit.splice(i, 1);
+        const rg = REG[tr.dst];
+        bulk[tr.dst].push({ ion: tr.ion, x: md.x, y, vx: tr.outward ? 1 : -1, vy: 0, state: 'in', drift: 0,
+          goal: { x: rg.x0 + 20 + Math.random() * (rg.x1 - rg.x0 - 40), y: rg.y0 + 10 + Math.random() * (rg.y1 - rg.y0 - 20) } });
+      }
+    }
+  }
+}
+function poisson(m) {
+  if (m <= 0) return 0;
+  if (m > 40) return Math.max(0, Math.round(m + Math.sqrt(m) * (Math.random() + Math.random() + Math.random() - 1.5) * 2));
+  const L = Math.exp(-m); let k = 0, p = 1;
+  do { k++; p *= Math.random(); } while (p > L);
+  return k - 1;
+}
+const slotsOf = type => LAYOUT.map((t, i) => t === type ? i : -1).filter(i => i >= 0);
+const randSlot = type => { const s = slotsOf(type); return s[Math.floor(Math.random() * s.length)]; };
+
+/* ---------- simulation per frame ---------- */
+let lastStim = { t: -1e9, maxV: -100 };
+let holdUntil = 0;
+let sampleAcc = 0;
+function pushSample() { S.trace.push({ t: S.t, V: S.V, gNa: gNa(), gK: gK(), stim: stimNow() > 0 }); while (S.trace.length && S.trace[0].t < S.t - 27) S.trace.shift(); }
+function advance(dtSim, dtReal) {
+  const free = S.mode === 'free' && performance.now() > holdUntil;
+  const n = Math.max(1, Math.round(dtSim / DT));
+  for (let i = 0; i < n; i++) {
+    stepHH(DT, free);
+    if (S.t - lastStim.t < 6) lastStim.maxV = Math.max(lastStim.maxV, S.V);
+    sampleAcc += DT; if (sampleAcc >= 0.05 - 1e-9) { sampleAcc = 0; pushSample(); }
+  }
+  S.pulses = S.pulses.filter(p => p.t1 > S.t - 1);
+  // a sample of the ion traffic, drawn through the matching channels
+  const I = currents();
+  const want = [['Na', I.Na, 'Na'], ['K', I.K, 'K'], ['K', I.L, 'L']];
+  let budget = 3;
+  for (const [ion, cur, type] of want) {
+    const rate = K_VIS * Math.abs(cur) * S.msPerSec + (type === 'L' ? 0.5 : 0.08);   // per real second, with a faint background trickle
+    let nEv = Math.min(budget, poisson(Math.min(rate, 40) * dtReal)); budget -= nEv;
+    const outward = type === 'L' ? Math.random() < 0.7 : cur > 0;
+    for (let j = 0; j < nEv; j++) spawnCrossing(ion, type === 'L' ? (Math.random() < 0.7) : outward, randSlot(type));
+  }
+}
+function fire(amp = S.stimAmp, dur = S.stimDur, at = S.t) {
+  S.pulses.push({ t0: at, t1: at + dur, amp });
+  if (at <= S.t + 1e-9) lastStim = { t: at, maxV: S.V };
+  setPlaying(true); updateUI();
+}
+function firePair() {
+  fire(); S.pulses.push({ t0: S.t + S.gap, t1: S.t + S.gap + S.stimDur, amp: S.stimAmp });
+  note(`Two pulses, ${S.gap} ms apart. Whether the second one fires depends on how far the Na⁺ plugs (h) have cleared and how far the K⁺ gates (n) have closed by then.`);
+}
+function reset() {
+  S.pulses = []; S.ttx = false; S.tea = false; S.gNaPct = 100; S.gKPct = 100; S.mode = 'free';
+  findRest(); S.V = REST; S.m = restGates.m; S.h = restGates.h; S.n = restGates.n; S.clampV = REST;
+  S.t = 0; S.trace = []; sampleAcc = 0; lastStim = { t: -1e9, maxV: -100 }; handNote = null; transit.length = 0;
+  buildDots(); pushSample(); setPlaying(true); updateStatic();
+}
+function setPlaying(p) { S.playing = p; $('#play').textContent = p ? 'Pause' : 'Play'; $('#play').setAttribute('aria-pressed', p ? 'true' : 'false'); }
+
+/* ---------- stage drawing ---------- */
+const stage = $('#stage'), ctx = stage.getContext('2d');
+function fitStage() {
+  const cssW = stage.clientWidth || 640, dpr = window.devicePixelRatio || 1, sc = cssW / W;
+  stage.width = Math.round(W * sc * dpr); stage.height = Math.round(H * sc * dpr);
+  ctx.setTransform(sc * dpr, 0, 0, sc * dpr, 0, 0);
+}
+const FONT_UI = '"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif';
+const FONT_MONO = '"IBM Plex Mono", ui-monospace, Menlo, monospace';
+function haloText(c, text, x, y, font, color, align = 'center', baseline = 'middle') {
+  c.font = font; c.textAlign = align; c.textBaseline = baseline;
+  c.lineJoin = 'round'; c.lineWidth = 4; c.strokeStyle = T.stage; c.strokeText(text, x, y);
+  c.fillStyle = color; c.fillText(text, x, y);
+}
+function drawArrow(c, x0, x1, y, w, color, dash) {
+  const dir = Math.sign(x1 - x0) || 1, len = Math.abs(x1 - x0);
+  const headL = Math.min(12, Math.max(6, len * 0.6)), headW = w + 3;
+  const shaftEnd = x1 - dir * headL * 0.7;
+  c.lineCap = 'round'; c.setLineDash([]); c.strokeStyle = T.stage; c.lineWidth = w + 5;
+  c.beginPath(); c.moveTo(x0, y); c.lineTo(shaftEnd, y); c.stroke();
+  c.lineJoin = 'round'; c.lineWidth = 4;
+  c.beginPath(); c.moveTo(x1, y); c.lineTo(x1 - dir * headL, y - headW); c.lineTo(x1 - dir * headL, y + headW); c.closePath(); c.stroke();
+  c.setLineDash(dash || []); c.strokeStyle = color; c.lineWidth = w;
+  c.beginPath(); c.moveTo(x0, y); c.lineTo(shaftEnd, y); c.stroke();
+  c.setLineDash([]); c.fillStyle = color;
+  c.beginPath(); c.moveTo(x1, y); c.lineTo(x1 - dir * headL, y - headW); c.lineTo(x1 - dir * headL, y + headW); c.closePath(); c.fill();
+}
+function drawIonDot(c, k, x, y, r) {
+  c.beginPath(); c.arc(x, y, r, 0, TAU); c.fillStyle = T.ion[k]; c.fill();
+  c.lineWidth = 1; c.strokeStyle = T.ring; c.stroke();
+  c.fillStyle = T.glyph; c.font = `700 10px ${FONT_MONO}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText(IONS[k].glyph, x, y + 0.5);
+}
+function drawGatedIcon(c, type, y, first) {
+  const col = T.ion[type], x0 = mx - 28, w = 56;
+  const blocked = (type === 'Na' && S.ttx) || (type === 'K' && S.tea);
+  c.fillStyle = hexToRgba(col, blocked ? 0.1 : 0.26); c.strokeStyle = col; c.lineWidth = 1.3;
+  c.beginPath(); c.roundRect(x0, y - 10.5, w, 7.5, 3); c.fill(); c.stroke();
+  c.beginPath(); c.roundRect(x0, y + 3, w, 7.5, 3); c.fill(); c.stroke();
+  if (blocked) {
+    c.fillStyle = T.ink; c.globalAlpha = 0.85; c.beginPath(); c.roundRect(x0 + 2, y - 2.5, w - 4, 5, 2); c.fill(); c.globalAlpha = 1;
+    if (first) haloText(c, type === 'Na' ? 'TTX' : 'TEA', mR + 28, y, `700 10px ${FONT_UI}`, T.ink2, 'left');
+    return;
+  }
+  if (type === 'L') return;
+  const open = type === 'Na' ? S.m : S.n;                       // the activation gate at the outer mouth swings with m or n
+  const ang = (92 - 84 * open) * Math.PI / 180;
+  c.strokeStyle = col; c.lineWidth = 2.4; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(mx + 15, y - 3); c.lineTo(mx + 15 + 7 * Math.cos(ang), y - 3 + 7 * Math.sin(ang)); c.stroke();
+  if (type === 'Na') {                                          // the inactivation ball on its chain at the inner mouth
+    const q = 1 - S.h, bx = mx - 19 + 9 * q, by = y + 9.5 - 9.5 * q;
+    c.strokeStyle = T.ink; c.lineWidth = 1; c.beginPath(); c.moveTo(mx - 25, y + 10.5); c.lineTo(bx, by); c.stroke();
+    c.fillStyle = T.ink; c.beginPath(); c.arc(bx, by, 2.9, 0, TAU); c.fill();
+  }
+}
+function drawStage() {
+  const c = ctx, I = currents();
+  c.setLineDash([]); c.globalAlpha = 1;
+  c.clearRect(0, 0, W, H);
+  c.fillStyle = T.stageIn; c.fillRect(0, 0, mL, H);
+  c.fillStyle = T.stageOut; c.fillRect(mR, 0, W - mR, H);
+  c.fillStyle = T.core; c.fillRect(mL, LANE, mR - mL, H - LANE);
+  c.fillStyle = T.stage; c.fillRect(0, 0, W, LANE);
+
+  // membrane: icons in their slots, lipid elsewhere
+  const seen = {};
+  for (let k = 0; k < NSLOT; k++) {
+    const y = slotY(k), type = LAYOUT[k];
+    if (!type) { c.fillStyle = T.membrane; c.beginPath(); c.arc(mL + 7, y, 3.5, 0, TAU); c.arc(mR - 7, y, 3.5, 0, TAU); c.fill(); continue; }
+    c.fillStyle = T.pore; c.fillRect(mL - 2, y - 3, mR - mL + 4, 6);
+    drawGatedIcon(c, type, y, !seen[type]); seen[type] = true;
+  }
+  // unpaired charge on the faces
+  const nMarks = Math.min(22, Math.round(Math.abs(S.V) / 4));
+  if (nMarks > 0) {
+    const inSign = S.V < 0 ? MINUS : '+', outSign = S.V < 0 ? '+' : MINUS;
+    c.fillStyle = T.ink2; c.font = `700 11px ${FONT_MONO}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+    for (let i = 0; i < nMarks; i++) {
+      const y = 300 + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 15;
+      c.fillText(inSign, mL - 9, y); c.fillText(outSign, mR + 9, y);
+    }
+  }
+  // crowds and crossings
+  for (const side of ['in', 'out']) for (const d of bulk[side]) drawIonDot(c, d.ion, d.x, d.y, CROWD_R);
+  for (const tr of transit) {
+    drawIonDot(c, tr.ion, tr.x, tr.y, tr.phase === 1 ? 4.5 : CROWD_R);
+    c.strokeStyle = T.ink; c.lineWidth = 1.5; c.beginPath(); c.arc(tr.x, tr.y, 9, 0, TAU); c.stroke();
+  }
+  let g = c.createLinearGradient(0, 0, 46, 0); g.addColorStop(0, hexToRgba(T.stageIn, 1)); g.addColorStop(1, hexToRgba(T.stageIn, 0));
+  c.fillStyle = g; c.fillRect(0, LANE, 46, H - LANE);
+  g = c.createLinearGradient(W - 46, 0, W, 0); g.addColorStop(0, hexToRgba(T.stageOut, 0)); g.addColorStop(1, hexToRgba(T.stageOut, 1));
+  c.fillStyle = g; c.fillRect(W - 46, LANE, 46, H - LANE);
+  KEYS.forEach((k, i) => {
+    const y = LANE + 20 + i * 15;
+    c.beginPath(); c.arc(20, y, 4, 0, TAU); c.fillStyle = T.ion[k]; c.fill();
+    haloText(c, `${IONS[k].sym} ${fmtCshort(IONS[k].cin)} mM`, 30, y, `600 11px ${FONT_MONO}`, T.ink, 'left');
+    c.beginPath(); c.arc(W - 20, y, 4, 0, TAU); c.fillStyle = T.ion[k]; c.fill();
+    haloText(c, `${IONS[k].sym} ${fmtCshort(IONS[k].cout)} mM`, W - 30, y, `600 11px ${FONT_MONO}`, T.ink, 'right');
+  });
+
+  // the lane: voltage axis, equilibrium potentials, and the pull of each conductance
+  haloText(c, 'INSIDE · cytosol', 16, 14, `700 12px ${FONT_UI}`, T.ink2, 'left');
+  haloText(c, 'OUTSIDE · extracellular', W - 16, 14, `700 12px ${FONT_UI}`, T.ink2, 'right');
+  haloText(c, S.mode === 'clamp' ? 'membrane voltage · held' : 'membrane voltage', mx, 12, `700 11px ${FONT_UI}`, T.ink2);
+  haloText(c, `${fmtSigned(S.V, 1)} mV`, mx, 30, `600 16px ${FONT_MONO}`, T.ink);
+  haloText(c, `t = ${S.t.toFixed(2)} ms`, mx + 70, 30, `500 11px ${FONT_MONO}`, T.muted, 'left');
+  c.strokeStyle = T.muted; c.lineWidth = 1.5; c.beginPath(); c.moveTo(AX0, AXY); c.lineTo(AX1, AXY); c.stroke();
+  for (let v = VMIN; v <= VMAX; v += 20) { c.strokeStyle = T.line; c.lineWidth = 1; c.beginPath(); c.moveTo(xOfV(v), AXY - 3); c.lineTo(xOfV(v), AXY + 3); c.stroke(); }
+  c.strokeStyle = T.muted; c.beginPath(); c.moveTo(xOfV(0), AXY - 5); c.lineTo(xOfV(0), AXY + 5); c.stroke();
+  haloText(c, 'each E ▾', AX0, 107, `700 10px ${FONT_UI}`, T.muted, 'left');
+  haloText(c, '0 mV', xOfV(0), 107, `600 10px ${FONT_MONO}`, T.muted);
+  const xv = xOfV(S.V);
+  const pulls = [
+    { key: 'Na', E: HH.ENa, g: gNa(), col: T.ion.Na, y: 47, label: 'Na⁺' },
+    { key: 'K',  E: HH.EK,  g: gK(),  col: T.ion.K,  y: 59, label: 'K⁺' },
+    { key: 'L',  E: HH.EL,  g: HH.gL, col: T.membrane, y: 71, label: 'leak' },
+  ];
+  for (const p of pulls) {
+    const xe = xOfV(p.E);
+    c.fillStyle = p.col; c.beginPath(); c.moveTo(xe, AXY + 2); c.lineTo(xe - 5, AXY + 9); c.lineTo(xe + 5, AXY + 9); c.closePath(); c.fill();
+    haloText(c, `${p.label} ${fmtSigned(p.E, 0)}`, xe, 107, `600 10px ${FONT_MONO}`, T.ink2);
+    if (p.g < 0.02) continue;
+    const w = clamp(1.5 + 2.2 * Math.sqrt(p.g), 1.5, 13), dir = xe >= xv ? 1 : -1;
+    if (Math.abs(xe - xv) < 6) { c.fillStyle = p.col; c.beginPath(); c.arc(xv, p.y, 3, 0, TAU); c.fill(); }
+    else drawArrow(c, xv, xe, p.y, w, p.col);
+    haloText(c, p.label, xe + dir * 8, p.y, `700 11px ${FONT_UI}`, T.ink2, dir > 0 ? 'left' : 'right');
+  }
+  if (I.stim > 0) { drawArrow(c, xv, xv + 44, 83, 4, T.ink); haloText(c, 'stimulus', xv + 52, 83, `700 11px ${FONT_UI}`, T.ink2, 'left'); }
+  c.fillStyle = T.stage; c.beginPath(); c.arc(xv, AXY, 8, 0, TAU); c.fill();
+  c.fillStyle = T.ink; c.beginPath(); c.arc(xv, AXY, 6, 0, TAU); c.fill();
+}
+
+/* ---------- trace: voltage on top, conductances below ---------- */
+const trace = $('#trace'), tctx = trace.getContext('2d'), tip = $('#tip');
+let hoverX = null;
+function fitTrace() {
+  const dpr = window.devicePixelRatio || 1;
+  trace.width = Math.round(trace.clientWidth * dpr); trace.height = Math.round(trace.clientHeight * dpr);
+  tctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function drawTrace() {
+  const c = tctx, w = trace.clientWidth, h = trace.clientHeight;
+  const padL = 44, padR = 96, padT = 8, padB = 22, gapY = 14;
+  c.clearRect(0, 0, w, h);
+  const hV = Math.round((h - padT - padB - gapY) * 0.6), hG = h - padT - padB - gapY - hV;
+  const vTop = padT, gTop = padT + hV + gapY;
+  const t1 = Math.max(25, S.t), t0 = t1 - 25;
+  const X = t => padL + (t - t0) / 25 * (w - padL - padR);
+  const YV = v => vTop + (60 - v) / 160 * hV;
+  let gMax = 40; for (const s of S.trace) gMax = Math.max(gMax, s.gNa, s.gK); gMax = Math.ceil(gMax / 20) * 20;
+  const YG = g => gTop + (1 - g / gMax) * hG;
+  c.font = `11px ${FONT_MONO}`; c.textBaseline = 'middle'; c.textAlign = 'right';
+  for (let v = -100; v <= 60; v += 40) {
+    c.strokeStyle = v === 0 ? T.line : T.line2; c.lineWidth = 1; c.beginPath(); c.moveTo(padL, YV(v)); c.lineTo(w - padR, YV(v)); c.stroke();
+    c.fillStyle = T.muted; c.fillText((v > 0 ? '+' : v < 0 ? MINUS : '') + Math.abs(v), padL - 8, YV(v));
+  }
+  for (let gg = 0; gg <= gMax; gg += gMax / 2) {
+    c.strokeStyle = T.line2; c.lineWidth = 1; c.beginPath(); c.moveTo(padL, YG(gg)); c.lineTo(w - padR, YG(gg)); c.stroke();
+    c.fillStyle = T.muted; c.fillText(gg.toFixed(0), padL - 8, YG(gg));
+  }
+  c.textAlign = 'center'; c.textBaseline = 'top';
+  for (let t = Math.ceil(t0 / 5) * 5; t <= t1 + 0.01; t += 5) { c.fillStyle = T.muted; c.fillText(t.toFixed(0) + ' ms', X(t), h - padB + 6); }
+  c.save(); c.translate(11, vTop + hV / 2); c.rotate(-Math.PI / 2); c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = T.muted; c.font = `11px ${FONT_UI}`; c.fillText('mV', 0, 0); c.restore();
+  c.save(); c.translate(11, gTop + hG / 2); c.rotate(-Math.PI / 2); c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = T.muted; c.font = `11px ${FONT_UI}`; c.fillText('mS/cm²', 0, 0); c.restore();
+  // reference lines
+  const refs = [[HH.ENa, T.ion.Na, `E(Na⁺) ${fmtSigned(HH.ENa, 0)}`, [6, 4]], [HH.EK, T.ion.K, `E(K⁺) ${fmtSigned(HH.EK, 0)}`, [6, 4]], [HH.EL, T.membrane, `leak ${fmtSigned(HH.EL, 0)}`, [2, 4]], [-58, T.muted, '≈ threshold', [2, 3]]];
+  const labels = [];
+  for (const [v, col, text, dash] of refs) {
+    c.setLineDash(dash); c.strokeStyle = col; c.lineWidth = 1.2; c.beginPath(); c.moveTo(padL, YV(v)); c.lineTo(w - padR, YV(v)); c.stroke(); c.setLineDash([]);
+    labels.push({ y: YV(v), text, color: T.ink2 });
+  }
+  const pts = S.trace.filter(s => s.t >= t0 - 0.1);
+  if (pts.length) {
+    // stimulus marks along the bottom of the voltage panel
+    c.fillStyle = T.ink; for (const s of pts) if (s.stim) c.fillRect(Math.max(padL, X(s.t)), vTop + hV - 3, 1.2, 3);
+    c.strokeStyle = T.ink; c.lineWidth = 2; c.lineJoin = 'round'; c.beginPath();
+    pts.forEach((s, i) => { const x = Math.max(padL, X(s.t)); i ? c.lineTo(x, YV(s.V)) : c.moveTo(x, YV(s.V)); }); c.stroke();
+    c.strokeStyle = T.ion.Na; c.lineWidth = 2; c.beginPath(); pts.forEach((s, i) => { const x = Math.max(padL, X(s.t)); i ? c.lineTo(x, YG(s.gNa)) : c.moveTo(x, YG(s.gNa)); }); c.stroke();
+    c.strokeStyle = T.ion.K; c.beginPath(); pts.forEach((s, i) => { const x = Math.max(padL, X(s.t)); i ? c.lineTo(x, YG(s.gK)) : c.moveTo(x, YG(s.gK)); }); c.stroke();
+    const last = pts[pts.length - 1];
+    c.fillStyle = T.ink; c.beginPath(); c.arc(X(last.t), YV(last.V), 3.5, 0, TAU); c.fill();
+    labels.push({ y: YV(last.V), text: `Vm ${fmtSigned(last.V, 1)}`, color: T.ink, bold: true });
+    labels.push({ y: YG(last.gNa), text: `g Na⁺ ${last.gNa.toFixed(1)}`, color: T.ink2 });
+    labels.push({ y: YG(last.gK), text: `g K⁺ ${last.gK.toFixed(1)}`, color: T.ink2 });
+  }
+  labels.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < labels.length; i++) if (labels[i].y - labels[i - 1].y < 12) labels[i].y = labels[i - 1].y + 12;
+  c.textAlign = 'left'; c.textBaseline = 'middle';
+  for (const l of labels) { c.font = `${l.bold ? 600 : 500} 10.5px ${FONT_MONO}`; c.fillStyle = l.color; c.fillText(l.text, w - padR + 7, l.y); }
+  if (hoverX !== null && pts.length) {
+    const tH = t0 + (hoverX - padL) / (w - padL - padR) * 25;
+    let best = pts[0];
+    for (const s of pts) if (Math.abs(s.t - tH) < Math.abs(best.t - tH)) best = s;
+    if (Math.abs(best.t - tH) < 1) {
+      c.strokeStyle = T.muted; c.lineWidth = 1; c.setLineDash([3, 3]); c.beginPath(); c.moveTo(X(best.t), vTop); c.lineTo(X(best.t), h - padB); c.stroke(); c.setLineDash([]);
+      tip.style.display = 'block'; tip.style.left = X(best.t) + 'px'; tip.style.top = YV(best.V) + 'px';
+      tip.textContent = `t ${best.t.toFixed(2)} ms · Vm ${fmtSigned(best.V, 1)} mV · gNa ${best.gNa.toFixed(1)} · gK ${best.gK.toFixed(1)}`;
+    } else tip.style.display = 'none';
+  } else tip.style.display = 'none';
+}
+trace.addEventListener('mousemove', e => { hoverX = e.offsetX; });
+trace.addEventListener('mouseleave', () => { hoverX = null; });
+
+/* ---------- phases and narrator ---------- */
+const PHASES = [['rest', 'Rest'], ['stimulus', 'Stimulus'], ['subthreshold', 'Subthreshold'], ['rising', 'Rising'], ['peak', 'Peak'], ['falling', 'Falling'], ['undershoot', 'Undershoot'], ['refractory', 'Refractory']];
+const phaseRow = $('#phases');
+for (const [k, label] of PHASES) { const s = document.createElement('span'); s.className = 'ph'; s.dataset.ph = k; s.textContent = label; phaseRow.appendChild(s); }
+let handNote = null, narrKey = '', narrAt = 0;
+const note = (html, ms = 7000) => { handNote = { until: performance.now() + ms, html }; };
+function slope() { const n = S.trace.length; if (n < 2) return 0; const a = S.trace[n - 2], b = S.trace[n - 1]; return b.t > a.t ? (b.V - a.V) / (b.t - a.t) : 0; }
+function detectPhase(dV) {
+  const V = S.V;
+  if (S.mode === 'clamp') return 'held';
+  if (stimNow() > 0 && gNa() < 1 && V < -40) return 'stimulus';
+  if (dV > 8 && gNa() > 1 && V < 45) return 'rising';
+  if (V > -10 && Math.abs(dV) <= 8 && !(S.tea && S.h < 0.3 && dV < -0.5)) return 'peak';
+  if (dV < -8 && V > REST + 2) return 'falling';
+  if (S.tea && dV < -0.3 && V > REST + 10 && S.h < 0.35) return 'falling';
+  if (V < REST - 3 && S.n > 0.38) return 'undershoot';
+  if (S.h < 0.45 && V < -40) return 'refractory';
+  if (Math.abs(V - REST) < 2.5 && Math.abs(dV) < 1.5 && stimNow() === 0) return 'rest';
+  if (V < REST - 2.5) return 'undershoot';
+  return 'subthreshold';
+}
+function narrate(ph, I) {
+  const V = fmtSigned(S.V, 0), m = f2(S.m), h = f2(S.h), n = f2(S.n);
+  switch (ph) {
+    case 'rest': return `At rest, ${V} mV. The Na⁺ activation gates are shut (m = ${m}) but the inactivation plugs are clear (h = ${h}), so the channels are ready to open. The K⁺ gates are mostly shut (n = ${n}). The leak holds V<sub>m</sub> near its own E. Press <b>Stimulate</b>.`;
+    case 'stimulus': return `Stimulus: ${I.stim.toFixed(0)} µA/cm² of current is being injected and V<sub>m</sub> is climbing. ${S.ttx ? 'With the Na⁺ channels blocked by TTX, this can only be a passive bump.' : 'If enough Na⁺ gates open before the K⁺ and leak pulls win, the spike will take over from here.'}`;
+    case 'subthreshold': return S.t - lastStim.t < 12
+      ? `Below threshold: the stimulus lifted V<sub>m</sub> to ${fmtSigned(lastStim.maxV, 0)} mV, but ${S.ttx ? 'the Na⁺ channels are blocked by TTX' : 'not enough Na⁺ channels opened to outrun the K⁺ and leak pulls'}, so V<sub>m</sub> slides back to rest. Threshold is where Na⁺ inflow starts to win.`
+      : `V<sub>m</sub> is drifting back to rest.`;
+    case 'rising': return `Rising phase: the Na⁺ activation gates are swinging open (m = ${m}) and Na⁺ pours in, pulling V<sub>m</sub> toward E<sub>Na</sub>. Each bit of depolarization opens more gates, which depolarizes more: positive feedback, which is why the spike is all-or-none.`;
+    case 'peak': return S.tea
+      ? `Plateau: ${V} mV, inside positive. The K⁺ gates would be opening now, but TEA has blocked the channels, so nothing pulls V<sub>m</sub> down quickly. Only the Na⁺ plugs closing (h = ${h}) and the leak bring it down, slowly.`
+      : `Peak: ${V} mV, inside positive. V<sub>m</sub> was heading for E<sub>Na</sub> (+61) but stops short: the inactivation plugs are swinging in (h = ${h}) and the K⁺ gates are opening (n = ${n}).`;
+    case 'falling': return `Falling phase: the Na⁺ channels are plugged (h = ${h}) and the K⁺ gates are open (n = ${n}), so K⁺ rushes out and pulls V<sub>m</sub> down toward E<sub>K</sub>.${S.tea ? ' With the K⁺ channels blocked by TEA, only Na⁺ inactivation and the leak are bringing it down, slowly.' : ''}`;
+    case 'undershoot': return `Undershoot: the K⁺ gates are still open (n = ${n}), so V<sub>m</sub> dips below rest toward E<sub>K</sub> (−89). As they close, the leak brings it back.`;
+    case 'refractory': return `Refractory: the Na⁺ plugs have not cleared yet (h = ${h})${S.n > 0.4 ? ' and the K⁺ gates are still partly open' : ''}, so a new stimulus fires a smaller spike or none. This is what keeps a spike from running backwards along the axon.`;
+    case 'held': return `You are holding V<sub>m</sub> at ${V} mV, a voltage clamp. Watch the gates respond: Na⁺ opens fast (m = ${m}) and then plugs itself (h = ${h}); K⁺ opens more slowly and stays open (n = ${n}). The conductance trace shows both.`;
+  }
+  return '';
+}
+
+/* ---------- UI ---------- */
+function setBar(el, value, scale) {
+  const pct = Math.min(50, Math.abs(value) / scale * 50);
+  el.classList.toggle('in', value >= 0); el.classList.toggle('out', value < 0);
+  el.style.width = pct + '%';
+}
+function updateUI() {
+  const I = currents(), dV = slope(), ph = detectPhase(dV);
+  $$('#phases .ph').forEach(s => s.classList.toggle('on', s.dataset.ph === ph || (ph === 'held' && s.dataset.ph === 'rest')));
+  const scale = Math.max(40, Math.abs(I.Na), Math.abs(I.K), Math.abs(I.L), I.stim);
+  setBar($('#bNa'), I.Na, scale); setBar($('#bK'), I.K, scale); setBar($('#bL'), I.L, scale); setBar($('#bS'), -I.stim, scale);
+  $('#rNa').textContent = S.ttx ? '· blocked' : `· ${(S.m ** 3 * S.h * 100).toFixed(0)}% open`;
+  $('#rK').textContent = S.tea ? '· blocked' : `· ${(S.n ** 4 * 100).toFixed(0)}% open`;
+  $('#rL').textContent = '· always open';
+  $('#vNa').textContent = `${fmtI(I.Na)} ${I.Na < 0 ? 'in' : 'out'} · pulls ${I.Na > 0 ? 'down' : 'up'}`;
+  $('#vK').textContent = `${fmtI(I.K)} ${I.K < 0 ? 'in' : 'out'} · pulls ${I.K > 0 ? 'down' : 'up'}`;
+  $('#vL').textContent = `${fmtI(I.L)} ${I.L < 0 ? 'in' : 'out'} · pulls ${I.L > 0 ? 'down' : 'up'}`;
+  $('#vS').textContent = I.stim > 0 ? `${I.stim.toFixed(0)} injected · pulls up` : 'off';
+  $('#roVm').innerHTML = `${fmtSigned(S.V, 1)}<small>mV</small>`;
+  $('#roVmNote').textContent = S.mode === 'clamp' ? 'held where you set it' : 'inside relative to outside';
+  if (performance.now() > holdUntil) $('#rVm').value = Math.round(S.V);
+  $('#gm').textContent = f2(S.m); $('#gh').textContent = f2(S.h); $('#gn').textContent = f2(S.n);
+  $('#bm').style.width = (S.m * 100) + '%'; $('#bh').style.width = (S.h * 100) + '%'; $('#bn').style.width = (S.n * 100) + '%';
+  const txt = (handNote && performance.now() < handNote.until) ? handNote.html : narrate(ph, I);
+  if (txt.slice(0, 40) !== narrKey || performance.now() - narrAt > 1000) { $('#narrText').innerHTML = txt; narrKey = txt.slice(0, 40); narrAt = performance.now(); }
+  $('#eq').innerHTML = `I<sub>Na</sub> = g̅<sub>Na</sub>·m³·h·(V − E<sub>Na</sub>) = ${HH.gNa * (S.ttx ? 0 : S.gNaPct / 100)} × ${f2(S.m)}³ × ${f2(S.h)} × (${fmtSigned(S.V, 0)} − ${fmtSigned(HH.ENa, 0)}) = <b>${fmtSigned(I.Na, 2)}</b><br>` +
+    `I<sub>K</sub> = g̅<sub>K</sub>·n⁴·(V − E<sub>K</sub>) = ${HH.gK * (S.tea ? 0 : S.gKPct / 100)} × ${f2(S.n)}⁴ × (${fmtSigned(S.V, 0)} − ${fmtSigned(HH.EK, 0)}) = <b>${fmtSigned(I.K, 2)}</b><br>` +
+    `I<sub>leak</sub> = g<sub>L</sub>·(V − E<sub>L</sub>) = ${HH.gL} × (${fmtSigned(S.V, 0)} − ${fmtSigned(HH.EL, 0)}) = <b>${fmtSigned(I.L, 2)}</b> µA/cm²<br>` +
+    `C·dV/dt = −(I<sub>Na</sub> + I<sub>K</sub> + I<sub>leak</sub>) + I<sub>stim</sub> = <b>${fmtSigned(-(I.Na + I.K + I.L) + I.stim, 1)}</b> mV/ms`;
+}
+function updateStatic() {
+  readTokens();
+  $('#stimLbl').textContent = S.stimAmp; $('#rStim').value = S.stimAmp;
+  $('#gapLbl').textContent = `${S.gap} ms`; $('#rGap').value = S.gap;
+  $('#durLbl').textContent = `${S.stimDur.toFixed(1)} ms`; $('#rDur').value = S.stimDur;
+  $('#gNaLbl').textContent = `${S.gNaPct}%`; $('#rGNa').value = S.gNaPct; $('#gKLbl').textContent = `${S.gKPct}%`; $('#rGK').value = S.gKPct;
+  $('#ttxBtn').setAttribute('aria-pressed', S.ttx ? 'true' : 'false'); $('#teaBtn').setAttribute('aria-pressed', S.tea ? 'true' : 'false');
+  $$('#phiSeg button').forEach(b => b.setAttribute('aria-checked', parseFloat(b.dataset.phi) === S.phi ? 'true' : 'false'));
+  $$('#speedSeg button').forEach(b => b.setAttribute('aria-checked', parseFloat(b.dataset.speed) === S.msPerSec ? 'true' : 'false'));
+  $('#speedHint').textContent = `${S.msPerSec} ms of neuron time per second`;
+  $('#holdBtn').setAttribute('aria-pressed', S.mode === 'clamp' ? 'true' : 'false'); $('#holdBtn').textContent = S.mode === 'clamp' ? 'Holding' : 'Hold';
+  updateUI();
+}
+
+/* ---------- controls ---------- */
+$('#stimBtn').addEventListener('click', () => fire());
+$('#rStim').addEventListener('input', e => { S.stimAmp = +e.target.value; $('#stimLbl').textContent = S.stimAmp; });
+$('#rGap').addEventListener('input', e => { S.gap = +e.target.value; $('#gapLbl').textContent = `${S.gap} ms`; });
+$('#rDur').addEventListener('input', e => { S.stimDur = +e.target.value; $('#durLbl').textContent = `${S.stimDur.toFixed(1)} ms`; });
+$('#pairBtn').addEventListener('click', firePair);
+$('#ttxBtn').addEventListener('click', () => { S.ttx = !S.ttx; note(S.ttx ? 'TTX is blocking the voltage-gated Na⁺ channels. Stimulate: without Na⁺ inflow there is no spike, only a passive bump that the leak and K⁺ pull straight back down.' : 'TTX washed out: the Na⁺ channels work again.'); updateStatic(); });
+$('#teaBtn').addEventListener('click', () => { S.tea = !S.tea; note(S.tea ? 'TEA is blocking the voltage-gated K⁺ channels. Stimulate: the spike still fires, because Na⁺ makes the upstroke, but with no K⁺ outflow the membrane comes down only as the Na⁺ plugs close and the leak does its slow work.' : 'TEA washed out: the K⁺ channels work again.'); updateStatic(); });
+$('#rGNa').addEventListener('input', e => { S.gNaPct = +e.target.value; $('#gNaLbl').textContent = `${S.gNaPct}%`; });
+$('#rGK').addEventListener('input', e => { S.gKPct = +e.target.value; $('#gKLbl').textContent = `${S.gKPct}%`; });
+function seg(id, attr, fn) {
+  const el = $(id);
+  el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; $$('button', el).forEach(x => x.setAttribute('aria-checked', x === b ? 'true' : 'false')); fn(b.dataset[attr]); });
+}
+seg('#speedSeg', 'speed', v => { S.msPerSec = parseFloat(v); $('#speedHint').textContent = `${S.msPerSec} ms of neuron time per second`; });
+seg('#phiSeg', 'phi', v => { S.phi = parseFloat(v); findRest(); note(`Gate kinetics now run ${S.phi}× the speed of the squid axon at 6 °C. Faster gates make a shorter spike.`); updateStatic(); });
+function setVmByHand(v) {
+  S.V = clamp(v, -120, 80); if (S.mode === 'clamp') S.clampV = S.V;
+  holdUntil = performance.now() + 500; pushSample(); updateUI();
+}
+$('#rVm').addEventListener('input', e => setVmByHand(+e.target.value));
+$('#holdBtn').addEventListener('click', () => {
+  const hold = S.mode !== 'clamp';
+  S.mode = hold ? 'clamp' : 'free'; S.clampV = S.V; handNote = null;
+  if (!hold) note('Released. V<sub>m</sub> is free to move again; the gates start from wherever the hold left them.');
+  pushSample(); updateStatic();
+});
+$('#play').addEventListener('click', () => setPlaying(!S.playing));
+$('#stepBtn').addEventListener('click', () => { setPlaying(false); advance(0.05, 0.05 / S.msPerSec); updateUI(); });
+$('#reset').addEventListener('click', reset);
+let spaceGuard = false;                        // shortcuts work even after a button was clicked; only typing fields are left alone
+const typing = el => { const t = (el && el.tagName || '').toLowerCase(); return t === 'textarea' || t === 'select' || (t === 'input' && !['range', 'button', 'checkbox', 'radio'].includes(el.type)) || !!(el && el.isContentEditable); };
+window.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey || typing(e.target)) return;
+  const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  if (k === ' ') { e.preventDefault(); spaceGuard = true; if (!e.repeat) setPlaying(!S.playing); }
+  else if (k === 's') { e.preventDefault(); fire(); }
+  else if (k === '.') { e.preventDefault(); setPlaying(false); advance(0.05, 0.05 / S.msPerSec); updateUI(); }
+  else if (k === 'r') { e.preventDefault(); reset(); }
+});
+window.addEventListener('keyup', e => { if (e.key === ' ' && spaceGuard) { e.preventDefault(); spaceGuard = false; } });
+
+/* ---------- simple view ---------- */
+const viewBtn = $('#viewToggle');
+function setView(simple) {
+  document.body.classList.toggle('simple', simple);
+  viewBtn.textContent = simple ? 'Show more' : 'Show fewer';
+  try { localStorage.setItem('ap-view', simple ? 'simple' : 'full'); } catch (_) {}
+  fitStage(); fitTrace();
+}
+viewBtn.addEventListener('click', () => setView(!document.body.classList.contains('simple')));
+let startSimple = true; try { startSimple = localStorage.getItem('ap-view') !== 'full'; } catch (_) {}
+setView(startSimple);
+
+/* ---------- theme & resize ---------- */
+new ResizeObserver(() => { fitStage(); fitTrace(); }).observe($('.wrap'));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readTokens);
+new MutationObserver(readTokens).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { fitStage(); fitTrace(); });
+
+/* ---------- main loop ---------- */
+let last = performance.now(), lastUI = 0, tokenTick = 0;
+function frame(now) {
+  const dtReal = clamp((now - last) / 1000, 0, 0.05); last = now;
+  if (S.playing && dtReal > 0) advance(dtReal * S.msPerSec, dtReal);
+  updateDots(dtReal); updateTransit(dtReal); reconcile(dtReal);
+  if (++tokenTick % 30 === 0) readTokens();
+  drawStage(); drawTrace();
+  if (now - lastUI > 100) { updateUI(); lastUI = now; }
+  requestAnimationFrame(frame);
+}
+fitStage(); fitTrace(); readTokens(); reset();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
